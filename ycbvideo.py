@@ -1,13 +1,23 @@
 import imageio
+from numpy import ndarray
 import os
-from collections import namedtuple
-from typing import List, Union
+import re
+from typing import List, Tuple, NamedTuple, Union
 
 
-FrameSet = namedtuple('FrameSet', ['color', 'depth', 'label'])
+class Box(NamedTuple):
+    label: str
+    coordinates: Tuple[float, float, float, float]
 
 
-class DataSequence:
+class Frame(NamedTuple):
+    color: ndarray
+    depth: ndarray
+    boxes: List[Box]
+    label: ndarray
+
+
+class FrameSequence:
     def __init__(self, path: str):
         self._path = path
         self.test = os.listdir(self._path)
@@ -15,7 +25,7 @@ class DataSequence:
     def get_available_frame_sets(self) -> List[str]:
         return [entry[:6] for entry in os.listdir(self._path) if entry.endswith('-color.png')]
 
-    def get_frame_set(self, index: Union[int, str]) -> FrameSet:
+    def get_frame(self, index: Union[int, str]) -> Frame:
         if isinstance(index, int):
             index = "{:06d}".format(index)
         if index not in self.get_available_frame_sets():
@@ -23,10 +33,30 @@ class DataSequence:
 
         partial_path = f"{self._path}/{index}-"
 
-        return FrameSet(
+        return Frame(
             color=imageio.imread(partial_path + 'color.png'),
             depth=imageio.imread(partial_path + 'depth.png'),
+            boxes=self._get_boxes(index),
             label=imageio.imread(partial_path + 'label.png'))
+
+    def _get_boxes(self, index: str) -> List[Box]:
+        file = f"{self._path}/{index}-box.txt"
+        with open(file, 'r') as f:
+            pattern = re.compile(r'^(?P<label>[^ ]+) ([0-9.]+) ([0-9.]+) ([0-9.]+) ([0-9.]+)$')
+            boxes =[]
+
+            for line in f:
+                if match := pattern.match(line):
+                    label = match.group(1)
+                    coordinates = (float(match.group(2)),
+                                   float(match.group(3)),
+                                   float(match.group(4)),
+                                   float(match.group(5)))
+                    boxes.append(Box(label, coordinates))
+                else:
+                    raise ValueError(f"Box file has invalid format: {file}")
+
+        return boxes
 
 
 class YcbVideoLoader:
@@ -37,27 +67,21 @@ class YcbVideoLoader:
         path: Path to the YCB-Video dataset root directory
     """
 
-    @staticmethod
-    def _has_trailing_slash(path_to_folder: str):
-        return path_to_folder.endswith('/')
-
-    # def _remove_trailing
-
     def _set_directory_path(self, path: str):
         if not os.path.exists(path):
             raise IOError(f"Path does not exist: {path}")
         if not os.path.isdir(path):
             raise IOError(f"Path is not a directory: {path}")
 
-        self._path = path[:-1] if YcbVideoLoader._has_trailing_slash(path) else path
+        self._path = path.rstrip('/')
 
     def get_available_data_sequences(self) -> List[str]:
         return os.listdir(f"{self._path}/{self._data_directory}")
 
-    def get_data_sequence(self, index: Union[str, int]) -> DataSequence:
+    def get_data_sequence(self, index: Union[str, int]) -> FrameSequence:
         if isinstance(index, int):
             index = "{:04d}".format(index)
         if index not in self.get_available_data_sequences():
             raise IOError(f"Data sequence does not exist: {index} ({self._path}/{self._data_directory}/{index})")
 
-        return DataSequence(f"{self._path}/{self._data_directory}/{index}")
+        return FrameSequence(f"{self._path}/{self._data_directory}/{index}")
