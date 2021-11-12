@@ -2,7 +2,7 @@ import imageio
 from numpy import ndarray
 import os
 import re
-from typing import List, Tuple, NamedTuple, Union
+from typing import List, Tuple, NamedTuple, Iterable, Union
 
 
 class Box(NamedTuple):
@@ -75,13 +75,16 @@ class YcbVideoLoader:
 
         self._path = path.rstrip('/')
 
-    def get_available_data_sequences(self) -> List[str]:
+    def get_available_frame_sequences(self) -> List[str]:
         return os.listdir(f"{self._path}/{self._data_directory}")
 
-    def get_data_sequence(self, index: Union[str, int]) -> FrameSequence:
+    def get_frame_sequence(self, index: Union[str, int]) -> FrameSequence:
         if isinstance(index, int):
             index = "{:04d}".format(index)
-        if index not in self.get_available_data_sequences():
+        if index not in self.get_available_frame_sequences():
             raise IOError(f"Data sequence does not exist: {index} ({self._path}/{self._data_directory}/{index})")
 
         return FrameSequence(f"{self._path}/{self._data_directory}/{index}")
+
+    def get_frame_sequences(self, indexes: Iterable[Union[int, str]]) -> List[FrameSequence]:
+        return [self.get_frame_sequence(index) for index in indexes]
