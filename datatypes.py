@@ -1,8 +1,10 @@
 import re
 import imageio
 import os
+from pathlib import Path
 from numpy import ndarray
 from typing import Union, NamedTuple, Tuple, List
+import utils
 
 
 class Box(NamedTuple):
@@ -10,22 +12,22 @@ class Box(NamedTuple):
     coordinates: Tuple[float, float, float, float]
 
 
-class Frame(NamedTuple):
-    color: ndarray
-    depth: ndarray
-    boxes: List[Box]
-    label: ndarray
-
-
 class FrameDescriptor(NamedTuple):
     frame_sequence: str
     frame: str
 
 
+class Frame(NamedTuple):
+    color: ndarray
+    depth: ndarray
+    boxes: List[Box]
+    label: ndarray
+    description: FrameDescriptor
+
+
 class FrameSequence:
-    def __init__(self, path: str):
-        self._path = path
-        self.test = os.listdir(self._path)
+    def __init__(self, path: Union[Path, str]):
+        self._path = utils.validate_directory_path(path)
 
     def get_available_frame_sets(self) -> List[str]:
         return [entry[:6] for entry in os.listdir(self._path) if entry.endswith('-color.png')]
@@ -45,7 +47,8 @@ class FrameSequence:
             color=imageio.imread(partial_path + 'color.png'),
             depth=imageio.imread(partial_path + 'depth.png'),
             boxes=self._get_boxes(index),
-            label=imageio.imread(partial_path + 'label.png'))
+            label=imageio.imread(partial_path + 'label.png'),
+            description=FrameDescriptor(self._path.name, index))
 
     def _get_boxes(self, index: str) -> List[Box]:
         file = f"{self._path}/{index}-box.txt"

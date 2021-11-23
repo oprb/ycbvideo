@@ -1,41 +1,42 @@
 import os
+from pathlib import Path
 import re
 import logging
+import random
 from typing import List, Tuple, Iterable, Union
 import datatypes
 import frameselection
+import utils
 
 
 class YcbVideoLoader:
-    def __init__(self, path: str, data_directory: str = 'data'):
-        self._set_directory_path(path)
-        self._data_directory = data_directory
+    def __init__(self, path: Union[Path, str]):
+        self._path = utils.validate_directory_path(path)
+        self._data_directory = self._path / 'data'
+        self._data_syn_directory = self._path / 'data_syn'
         self._available_data_frame_sequences = self.get_available_frame_sequences()
     """
         path: Path to the YCB-Video dataset root directory
     """
 
-    def _set_directory_path(self, path: str):
-        if not os.path.exists(path):
-            raise IOError(f"Path does not exist: {path}")
-        if not os.path.isdir(path):
-            raise IOError(f"Path is not a directory: {path}")
-
-        self._path = path.rstrip('/')
-
     def get_available_frame_sequences(self) -> List[str]:
-        return os.listdir(f"{self._path}/{self._data_directory}")
+        available_sequences = os.listdir(self._data_directory)
 
-    def get_available_frames(self, frame_sequence: str) -> List[str]:
-        return [entry[:6] for entry in os.listdir(f"{self._path}/{self._data_directory}/{frame_sequence}") if entry.endswith('-color.png')]
+        if self._data_syn_directory.exists():
+            available_sequences.append(self._data_syn_directory.name)
+
+        return available_sequences
 
     def get_frame_sequence(self, index: Union[str, int]) -> datatypes.FrameSequence:
         if isinstance(index, int):
             index = "{:04d}".format(index)
-        if index not in self.get_available_frame_sequences():
-            raise IOError(f"Data sequence does not exist: {index} ({self._path}/{self._data_directory}/{index})")
 
-        return datatypes.FrameSequence(f"{self._path}/{self._data_directory}/{index}")
+        path = self._data_syn_directory if index == self._data_syn_directory.name else self._data_directory / index
+
+        if index not in self.get_available_frame_sequences():
+            raise IOError(f"Frame sequence does not exist: {index} ({path})")
+
+        return datatypes.FrameSequence(path)
 
     def get_frame_sequences(self, indexes: Iterable[Union[int, str]]) -> List[datatypes.FrameSequence]:
         return [self.get_frame_sequence(index) for index in indexes]
@@ -73,7 +74,7 @@ class YcbVideoLoader:
                             (specified at index {index} in {frame_selector}""")
 
         for frame_sequence in actual_frame_sequence_selection:
-            available_frames = sorted(self.get_available_frames(frame_sequence))
+            available_frames = sorted(self.get_frame_sequence(frame_sequence).get_available_frame_sets())
 
             if frameselection.is_star_selection(frame_selection):
                 frame_descriptors.extend([datatypes.FrameDescriptor(frame_sequence, frame) for frame in available_frames])
@@ -104,8 +105,11 @@ class YcbVideoLoader:
 
         return frame_descriptors
 
-    def frames(self, frames: List[str]) -> Iterable[datatypes.Frame]:
+    def frames(self, frames: List[str], shuffle: bool = False) -> Iterable[datatypes.Frame]:
         frame_descriptors = self._get_descriptors_from_selections(frames)
+
+        if shuffle:
+            random.shuffle(frame_descriptors)
 
         for descriptor in frame_descriptors:
             yield self._get_frame(descriptor)

@@ -1,5 +1,6 @@
 import re
 from typing import Union, List
+from pathlib import Path
 
 
 def get_frame_set_index(frame_set: Union[str, int]) -> str:
@@ -17,3 +18,14 @@ def get_frame_set_index(frame_set: Union[str, int]) -> str:
         raise ValueError(f"Index has to be a value between 0 and 91: {frame_set}")
 
     return "{:04d}".format(frame_set)
+
+
+def validate_directory_path(path: Union[Path, str]) -> Path:
+    path = Path(path)
+    if not path.exists():
+        raise IOError(f"Path does not exist: {path}")
+    if not path.is_dir():
+        raise IOError(f"Path is not a directory: {path}")
+
+    return path
+

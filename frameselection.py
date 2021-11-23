@@ -27,10 +27,10 @@ def is_star_selection(selection: List[str]) -> bool:
 
 def get_frame_selector(selection: str) -> FrameSelector:
     selection_pattern = r'\[([0-9]{1,n}(,[0-9]{1,n})*)\]|([0-9]{1,n})|\*'
-    frameset_selection_pattern = selection_pattern.replace('n', '4')
+    frameset_selection_pattern = selection_pattern.replace('n', '4') + r'|data_syn'
     frame_selection_pattern = selection_pattern.replace('n', '6')
     combined_pattern = re.compile(
-        f"^(?P<frameset>{frame_selection_pattern}):(?P<frame>{frameset_selection_pattern})$")
+        f"^(?P<frameset>{frameset_selection_pattern}):(?P<frame>{frame_selection_pattern})$")
 
     if match := combined_pattern.match(selection):
         frame_set_selection = match.group('frameset')
@@ -43,7 +43,7 @@ def get_frame_selector(selection: str) -> FrameSelector:
 
 def get_items(selection: str) -> List[str]:
     list_pattern = re.compile(r'^\[(?P<items>[0-9]+(,[0-9]+)*)\]$')
-    single_item_pattern = re.compile(r'^(?P<item>[0-9]+|\*)$')
+    single_item_pattern = re.compile(r'^(?P<item>[0-9]+|\*|data_syn)$')
 
     items = []
     if match := list_pattern.match(selection):
@@ -60,7 +60,7 @@ def format_selection_item(item: str, kind_of_item: str) -> str:
     if not (kind_of_item == 'frame_sequence' or kind_of_item == 'frame'):
         raise ValueError(
             f"Unknown kind of descriptor (has to be either 'frame_sequence' or 'frame'): {kind_of_item}")
-    if item == '*':
+    if item == '*' or item == 'data_syn':
         return item
 
     return "{:04d}".format(int(item)) if kind_of_item == 'frame_sequence' else "{:06d}".format(int(item))
