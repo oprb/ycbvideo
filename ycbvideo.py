@@ -40,28 +40,6 @@ class YcbVideoLoader:
     def get_frame_sequences(self, indexes: Iterable[Union[int, str]]) -> List[datatypes.FrameSequence]:
         return [self.get_frame_sequence(index) for index in indexes]
 
-    def get_frames(self, indexes: Iterable[int],
-                   frame_sequence_indexes: Iterable[Union[int, str]] = None) -> Iterable[datatypes.Frame]:
-        if frame_sequence_indexes is None:
-            frame_sequence_indexes = sorted(self.get_available_frame_sequences())
-
-        indexes = sorted(indexes, reverse=True)
-
-        frames = []
-        absolute_index = 0
-        for frame_sequence in (self.get_frame_sequence(index) for index in frame_sequence_indexes):
-            sequence_length = len(frame_sequence)
-            while indexes and (relative_index := indexes[-1] - absolute_index) <= sequence_length:
-                frames.append(frame_sequence.get_frame(relative_index))
-                indexes.pop()
-
-            absolute_index += sequence_length
-
-        if indexes:
-            logging.warning(f"All frame sets are traversed but still indexes remaining: {indexes}")
-
-        return frames
-
     def get_frame(self, index: Union[str, Tuple[str, str]]) -> datatypes.Frame:
         if isinstance(index, str):
             if match := re.match(r'^(?P<framesequence>[0-9]{4}):(?P<frame>[0-9]{6})$', index):
