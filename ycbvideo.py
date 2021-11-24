@@ -3,13 +3,16 @@ from pathlib import Path
 import re
 import logging
 import random
-from typing import List, Tuple, Iterable, Union
+from typing import List, Tuple, Iterable, Union, Iterator
 import datatypes
 import frameselection
 import utils
 
 
 class YcbVideoLoader:
+    """
+
+    """
     def __init__(self, path: Union[Path, str]):
         self._path = utils.validate_directory_path(path)
         self._data_directory = self._path / 'data'
@@ -112,7 +115,85 @@ class YcbVideoLoader:
 
         return frame_descriptors
 
-    def frames(self, frames: Union[List[str], Union[Path, str]], shuffle: bool = False) -> Iterable[datatypes.Frame]:
+    def frames(self, frames: Union[List[str], Union[Path, str]], shuffle: bool = False) -> Iterator[datatypes.Frame]:
+        """
+        Return an iterator for the specified frames.
+
+        To be memory-friendly, the specified frames will be created
+        just-in-time. The frames can be specified as either a list of
+        selection expressions or as a path to a file with one selection
+        expression per line.
+        Frame sequences and frames can each be selected by an
+        expression containing
+            - a single element
+            - a list of comma-delimited elements
+            - a '*' expressing all available elements.
+        Also, 'data_syn' can be used as a frame sequence selection
+        element to specify the data_syn frame sequence.
+        A frame sequence selection expression and a frame selection
+        expression together form a selection expression. Between both
+        frame sequence selection expression and frame selection
+        expression, a '/' is placed as the delimiter.
+
+        Examples for valid selection expressions:
+            - '1/42'
+                Get the 42th frame from the 1st frame sequence
+            - '1/[1,2,3]'
+                Get the 1st, 2nd and 3th frame from the 1st frame
+                sequence
+            - '[1,2]/42'
+                Get the 42th frame from the 1st and 2nd frame
+                sequence each
+            - '[1,2]/[4,3]'
+                Get the 4th and 3rd frame from the 1st and 2nd frame
+                sequence each
+            - '[1,2]/*'
+                Get all available frames from the 1st and 2nd frame
+                sequence each
+            - '*/[3,4]'
+                Get the 3rd and 4th frame from each the available
+                frame sequences
+            - '*/*'
+                Get all available frames from each the available
+                frame sequences
+            - 'data_syn/[1,2]'
+                Get the 1st and 2nd frame from the data_syn frame
+                sequence
+            - '[data_syn,2,1]:*'
+                Get all available frames from the data_syn, 2nd and 1st
+                frame sequence each
+
+        If `shuffle` is set to 'False', the frames will be returned
+        in exactly the order as specified by the order of selection
+        expressions and the order of the elements in those. Otherwise,
+        the frames get shuffled. Because random.shuffle() is used to
+        shuffle the frames, by setting a seed with random.seed(), the
+        frames will be shuffled the same way each time this method is
+        called.
+
+        For each specified frame it is made sure that the corresponding
+        files exists, even if the frame is only eventually created.
+        This can be especially useful when specifying a large number of
+        frames and consuming them needs minutes or even hours e.g. in
+        a machine-learning context.
+
+        Parameters
+        ----------
+        frames : Union[List[str], Union[pathlib.Path, str]]
+            Either a list of selection expressions or a path to a file
+            containing selection expressions.
+            The path can be either a string or a Path object.
+            If path is not absolute, it is assumed to be relative to
+            the root of the dataset.
+        shuffle : bool, optional
+            If True, the selected frames get shuffled
+
+        Yields
+        ------
+        Frame
+            A frame specified by frames
+        """
+
         if isinstance(frames, list):
             frame_descriptors = self._get_descriptors_from_selections(frames)
         elif isinstance(frames, (Path, str)):
