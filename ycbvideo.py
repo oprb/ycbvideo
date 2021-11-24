@@ -98,15 +98,33 @@ class YcbVideoLoader:
         return self.get_frame_sequence(descriptor.frame_sequence).get_frame(descriptor.frame)
 
     def _get_descriptors_from_selections(self, selections: List[str]) -> List[datatypes.FrameDescriptor]:
+        selectors = frameselection.get_frame_selectors(selections)
+
+        return self._get_descriptors_from_selectors(selectors)
+
+    def _get_descriptors_from_selectors(
+            self,
+            selectors: Iterable[frameselection.FrameSelector]) -> List[datatypes.FrameDescriptor]:
         frame_descriptors = []
 
-        for selector in frameselection.get_frame_selectors(selections):
+        for selector in selectors:
             frame_descriptors.extend(self.get_frame_descriptors(selector))
 
         return frame_descriptors
 
-    def frames(self, frames: List[str], shuffle: bool = False) -> Iterable[datatypes.Frame]:
-        frame_descriptors = self._get_descriptors_from_selections(frames)
+    def frames(self, frames: Union[List[str], Union[Path, str]], shuffle: bool = False) -> Iterable[datatypes.Frame]:
+        if isinstance(frames, list):
+            frame_descriptors = self._get_descriptors_from_selections(frames)
+        elif isinstance(frames, (Path, str)):
+            path = Path(frames)
+
+            if not path.is_absolute():
+                path = self._path / path
+
+            frame_selectors = frameselection.load_frame_selectors_from_file(path)
+            frame_descriptors = self._get_descriptors_from_selectors(frame_selectors)
+        else:
+            raise TypeError('frames has to be of type list, pathlib.Path or str')
 
         if shuffle:
             random.shuffle(frame_descriptors)
