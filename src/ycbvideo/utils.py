@@ -1,6 +1,6 @@
+from pathlib import Path
 import re
 from typing import Union, List
-from pathlib import Path
 
 
 def get_frame_set_index(frame_set: Union[str, int]) -> str:

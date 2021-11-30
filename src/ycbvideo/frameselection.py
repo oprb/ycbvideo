@@ -1,5 +1,5 @@
-import re
 from pathlib import Path
+import re
 from typing import List, NamedTuple, Final, Union, Iterable
 
 SELECTION_PATTERN: Final[str] = r'\[([0-9]{1,n}(,[0-9]{1,n})*)\]|([0-9]{1,n})|\*'

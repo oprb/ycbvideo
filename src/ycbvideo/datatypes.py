@@ -1,9 +1,11 @@
-import re
-import imageio
 import os
 from pathlib import Path
-from numpy import ndarray
+import re
 from typing import Union, NamedTuple, Tuple, List
+
+import imageio
+from numpy import ndarray
+
 import utils
 
 

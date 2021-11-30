@@ -1,9 +1,10 @@
+import logging
 import os
 from pathlib import Path
-import re
-import logging
 import random
+import re
 from typing import List, Tuple, Iterable, Union, Iterator
+
 import datatypes
 import frameselection
 import utils
