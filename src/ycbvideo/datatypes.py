@@ -6,7 +6,7 @@ from typing import Union, NamedTuple, Tuple, List
 import imageio
 from numpy import ndarray
 
-import utils
+from . import utils
 
 
 class Box(NamedTuple):

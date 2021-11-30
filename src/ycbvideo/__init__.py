@@ -1,4 +1,4 @@
-from ycbvideo.loader import YcbVideoLoader
+from .loader import YcbVideoLoader
 
 __all__ = [
     'YcbVideoLoader'
