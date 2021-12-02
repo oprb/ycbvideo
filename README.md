@@ -85,3 +85,15 @@ or by providing a file comprised of those expressions, one expression per line.
 
   If you provide a relative path, it is assumed that the file is located inside the dataset directory,
   e.g. `imagesets/train.txt`.
+
+If you want the frames to be shuffled for e.g. training in machine learning, just set the keyword
+argument to `True`. You can achieve the same shuffling result by setting a optionally defining a
+*seed*:
+
+```python
+# setting the seed
+random.seed(42)
+
+for frame in loader.frames('imagesets/train.txt', shuffle=True):
+    // do something with it
+```
