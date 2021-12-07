@@ -44,7 +44,7 @@ SEQUENCE_SELECTIONS = [*VALID_SELECTION_PARTS, *INVALID_SELECTION_PARTS, *SPECIA
 FRAME_SELECTIONS = [*VALID_SELECTION_PARTS, *INVALID_SELECTION_PARTS, *SPECIAL_FRAME_SELECTIONS]
 
 
-def selection_expressions() -> Iterable[Tuple[str, Union[FrameSelector, None]]]:
+def expression_and_selector() -> Iterable[Tuple[str, Union[FrameSelector, None]]]:
     for selection in itertools.product(SEQUENCE_SELECTIONS, FRAME_SELECTIONS):
         sequence_selection, expected_sequence_selection = selection[0]
         frame_selection, expected_frame_selection = selection[1]
@@ -56,7 +56,8 @@ def selection_expressions() -> Iterable[Tuple[str, Union[FrameSelector, None]]]:
                   FrameSelector(expected_sequence_selection, expected_frame_selection)
 
 
-def list_of_selection_expressions(amount: int) -> Iterable[Tuple[List[str], Union[List[FrameSelector], None]]]:
+def list_of_expressions_and_list_of_selectors(
+        amount: int) -> Iterable[Tuple[List[str], Union[List[FrameSelector], None]]]:
     number_of_sequence_selections = len(SEQUENCE_SELECTIONS)
     number_of_frame_selections = len(FRAME_SELECTIONS)
 
@@ -80,7 +81,7 @@ def list_of_selection_expressions(amount: int) -> Iterable[Tuple[List[str], Unio
         yield list_of_expressions, list_of_selectors if valid else None
 
 
-def selection_items() -> Iterable[Tuple[str, Union[List[str], None]]]:
+def expression_and_items() -> Iterable[Tuple[str, Union[List[str], None]]]:
     selections: List[Tuple[str, Union[str, None]]] = [*SEQUENCE_SELECTIONS, *FRAME_SELECTIONS]
 
     for selection in selections:
@@ -100,9 +101,9 @@ def test_is_star_selection(selection_and_expectation):
         else not frameselection.is_star_selection(selection)
 
 
-@pytest.mark.parametrize('selection_and_expectation', selection_expressions())
-def test_get_frame_selector(selection_and_expectation):
-    selection, expectation = selection_and_expectation
+@pytest.mark.parametrize('expression_and_selector', expression_and_selector())
+def test_get_frame_selector(expression_and_selector):
+    selection, expectation = expression_and_selector
 
     if isinstance(expectation, FrameSelector):
         assert frameselection.get_frame_selector(selection) == expectation
@@ -110,12 +111,12 @@ def test_get_frame_selector(selection_and_expectation):
         with pytest.raises(ValueError):
             frameselection.get_frame_selector(selection)
     else:
-        raise TypeError(f"Wrong input to test method: {selection_and_expectation}")
+        raise TypeError(f"Wrong input to test method: {expression_and_selector}")
 
 
-@pytest.mark.parametrize('selections_and_expectation', list_of_selection_expressions(100))
-def test_get_frame_selectors(selections_and_expectation):
-    selections, expectation = selections_and_expectation
+@pytest.mark.parametrize('list_of_expressions_and_list_of_selectors', list_of_expressions_and_list_of_selectors(100))
+def test_get_frame_selectors(list_of_expressions_and_list_of_selectors):
+    selections, expectation = list_of_expressions_and_list_of_selectors
 
     if isinstance(expectation, list):
         assert frameselection.get_frame_selectors(selections) == expectation
@@ -123,12 +124,12 @@ def test_get_frame_selectors(selections_and_expectation):
         with pytest.raises(ValueError):
             frameselection.get_frame_selectors(selections)
     else:
-        raise TypeError(f"Wrong input to test method: {selections_and_expectation}")
+        raise TypeError(f"Wrong input to test method: {list_of_expressions_and_list_of_selectors}")
 
 
-@pytest.mark.parametrize('selection_and_expectation', selection_items())
-def test_get_items(selection_and_expectation):
-    selection, expectation = selection_and_expectation
+@pytest.mark.parametrize('expression_and_items', expression_and_items())
+def test_get_items(expression_and_items):
+    selection, expectation = expression_and_items
 
     if isinstance(expectation, list):
         assert frameselection.get_items(selection) == expectation
@@ -136,4 +137,4 @@ def test_get_items(selection_and_expectation):
         with pytest.raises(ValueError):
             frameselection.get_items(selection)
     else:
-        raise TypeError(f"Wrong input to test method: {selection_and_expectation}")
+        raise TypeError(f"Wrong input to test method: {expression_and_items}")
