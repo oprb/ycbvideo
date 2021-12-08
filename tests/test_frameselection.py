@@ -72,13 +72,13 @@ def combine_sequence_and_frame_selections(
         yield combine_sequence_and_frame_selection(selection[0], selection[1], result_type)
 
 
-def expression_and_selector() -> Iterable[Tuple[str, Union[FrameSelector, None]]]:
+def expression_and_selector() -> Iterable[Tuple[str, Optional[FrameSelector]]]:
     for selection in itertools.product(SEQUENCE_SELECTIONS, FRAME_SELECTIONS):
         yield combine_sequence_and_frame_selection(selection[0], selection[1], result_type='selector')
 
 
 def list_of_expressions_and_list_of_selectors(
-        amount: int) -> Iterable[Tuple[List[str], Union[List[FrameSelector], None]]]:
+        amount: int) -> Iterable[Tuple[List[str], Optional[List[FrameSelector]]]]:
     number_of_sequence_selections = len(SEQUENCE_SELECTIONS)
     number_of_frame_selections = len(FRAME_SELECTIONS)
 
@@ -102,8 +102,8 @@ def list_of_expressions_and_list_of_selectors(
         yield list_of_expressions, list_of_selectors if valid else None
 
 
-def expression_and_items() -> Iterable[Tuple[str, Union[List[str], None]]]:
-    selections: List[Tuple[str, Union[str, None]]] = [*SEQUENCE_SELECTIONS, *FRAME_SELECTIONS]
+def expression_and_items() -> Iterable[Tuple[str, Optional[List[str]]]]:
+    selections: List[Tuple[str, Optional[str]]] = [*SEQUENCE_SELECTIONS, *FRAME_SELECTIONS]
 
     for selection in selections:
         expression, expectation = selection
