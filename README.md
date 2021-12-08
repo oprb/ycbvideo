@@ -7,7 +7,7 @@ You can find more information and a download link for the dataset
 [here](https://rse-lab.cs.washington.edu/projects/posecnn/).
 
 It allows access to the *frames*, located either in `data` or the `data_syn` folders. A frame
-here corresponds to all the information available for one portion of time, i. e. not only the color
+here corresponds to all the information available for one portion of time, i.e. not only the color
 image, but the color/depth/label images and for the frames in `data` also the bounding box coordinates.
 Frames are grouped in *frame sequences* of consecutive frames.
 Frames and frame sequences can be specified by *frame selection expressions*.
@@ -31,14 +31,14 @@ method for more ways and examples of how to specify the frames you're interested
 The `data_syn` directory is also handled as a frame sequence, *\*/42* therefore would also include
 the 42th frame from the `data_syn` frame sequence.
 
-Because the dataset is huge (~273GB), it would'nt make much sense to load all the data into memory
+Because the dataset is huge (~273 GB), it wouldn't make much sense to load all the data into memory
 at once, therefore, frames are loaded one at a time. Especially in case your working with just a
 subset of all the data from the dataset, e.g. having only the frame sequences 0001 - 0010 on your
-disk, it would be good to make sure that the data is really available when you start working with the
-frames. Therefore, after you specified all the frames you need by frame selection expression(s),
-it is made sure, that all the frames are on your disk and you did'nt forget to put e.g. frame
+disk, you'd want to be sure that the data is really available when you start working with the
+frames. Therefore, after you specify all the frames you need by frame selection expression(s),
+it is made sure, that all the frames are on your disk and you didn't forget to put e.g. frame
 sequence 0010 on your disk. This is especially helpful since the dataset is of most use for machine
-learning tasks. Getting an "file not found" error after hours of training could be very frustrating.
+learning tasks. Getting a "file not found" error after hours of training could be very frustrating.
 
 ## Installation
 
@@ -86,9 +86,8 @@ or by providing a file comprised of those expressions, one expression per line.
   If you provide a relative path, it is assumed that the file is located inside the dataset directory,
   e.g. `imagesets/train.txt`.
 
-If you want the frames to be shuffled for e.g. training in machine learning, just set the keyword
-argument to `True`. You can achieve the same shuffling result by setting a optionally defining a
-*seed*:
+If you want the frames to be shuffled for e.g. training in machine learning, just set the corresponding
+keyword argument to `True`. Optionally, you can set a *seed* to get the same shuffling result for each run:
 
 ```python
 # setting the seed
