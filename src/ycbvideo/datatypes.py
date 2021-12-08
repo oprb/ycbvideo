@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 import re
-from typing import Union, NamedTuple, Tuple, List
+from typing import Union, NamedTuple, Tuple, List, Optional
 
 import imageio
 from numpy import ndarray
@@ -22,7 +22,7 @@ class FrameDescriptor(NamedTuple):
 class Frame(NamedTuple):
     color: ndarray
     depth: ndarray
-    boxes: List[Box]
+    boxes: Optional[List[Box]]
     label: ndarray
     description: FrameDescriptor
 
@@ -30,6 +30,7 @@ class Frame(NamedTuple):
 class FrameSequence:
     def __init__(self, path: Union[Path, str]):
         self._path = utils.validate_directory_path(path)
+        self._sequence_name = self._path.name
 
     def get_available_frame_sets(self) -> List[str]:
         return [entry[:6] for entry in os.listdir(self._path) if entry.endswith('-color.png')]
@@ -48,7 +49,7 @@ class FrameSequence:
         return Frame(
             color=imageio.imread(partial_path + 'color.png'),
             depth=imageio.imread(partial_path + 'depth.png'),
-            boxes=self._get_boxes(index),
+            boxes=self._get_boxes(index) if self._sequence_name != 'data_syn' else None,
             label=imageio.imread(partial_path + 'label.png'),
             description=FrameDescriptor(self._path.name, index))
 
