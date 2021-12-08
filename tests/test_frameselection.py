@@ -173,6 +173,19 @@ def test_get_items(expression_and_items):
         raise TypeError(f"Wrong input to test method: {expression_and_items}")
 
 
+@pytest.mark.parametrize('item_and_kind_and_expectation',
+                         [('data_syn', 'frame_sequence', 'data_syn'),
+                          ('*', 'frame_sequence', '*'),
+                          ('*', 'frame', '*'),
+                          ('42', 'frame_sequence', '0042'),
+                          ('0042', 'frame_sequence', '0042'),
+                          ('42', 'frame', '000042'),
+                          ('000042', 'frame', '000042')])
+def test_format_selection_item(item_and_kind_and_expectation):
+    item, kind, expectation = item_and_kind_and_expectation
+    assert frameselection.format_selection_item(item, kind) == expectation
+
+
 def test_load_frame_selectors_from_file(tmp_path):
     from ycbvideo.frameselection import load_frame_selectors_from_file
     non_existent_file = tmp_path / 'non_existent_file'
