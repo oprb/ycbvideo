@@ -10,6 +10,7 @@ from numpy import ndarray
 from . import utils
 
 FILE_PATTERN = re.compile(r'^(?P<index>[0-9]{6})-(?P<kindoffile>[a-z]+)\.(png|txt)$')
+BOUNDING_BOX_PATTERN = re.compile(r'^(?P<label>[^ ]+) ([0-9.]+) ([0-9.]+) ([0-9.]+) ([0-9.]+)$')
 
 
 class Box(NamedTuple):
@@ -102,13 +103,12 @@ class FrameSequence:
             description=FrameDescriptor(self._path.name, index))
 
     def _get_boxes(self, index: str) -> List[Box]:
-        file = f"{self._path}/{index}-box.txt"
+        file = self._path / f"{index}-box.txt"
         with open(file, 'r') as f:
-            pattern = re.compile(r'^(?P<label>[^ ]+) ([0-9.]+) ([0-9.]+) ([0-9.]+) ([0-9.]+)$')
             boxes = []
 
             for line in f:
-                if match := pattern.match(line):
+                if match := BOUNDING_BOX_PATTERN.match(line):
                     label = match.group(1)
                     coordinates = (float(match.group(2)),
                                    float(match.group(3)),
