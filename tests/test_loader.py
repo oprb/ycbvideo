@@ -85,6 +85,14 @@ def test_frames_with_invalid_selection(loader):
     check_for_immediate_error(loader, ['1/*', '2/[*]', 'data_syn/000001'], ValueError)
 
 
+def test_frames_with_request_for_missing_frame_sequence(loader):
+    # the test dataset does not contain a data/0003 directory
+    # make sure an error is raised already when the first frame
+    # is requested from the iterator even if the missing frame
+    # sequence is not specified first
+    check_for_immediate_error(loader, ['1/*', '3/1'], IOError)
+
+
 def test_frames_with_missing_files(incomplete_dataset):
     dataset = incomplete_dataset(missing_files={
         'data/0001': {'000002-color.png', '000003-depth.png', '000004-label.png', '000005-box.txt'},
