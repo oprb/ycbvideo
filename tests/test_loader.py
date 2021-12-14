@@ -1,23 +1,11 @@
 from pathlib import Path
 import shutil
-from typing import Iterator
+from typing import Iterator, Union, List, Type
 
 import pytest
 
 import ycbvideo.datatypes
 from ycbvideo.loader import YcbVideoLoader
-
-
-@pytest.fixture(scope='session')
-def dataset(tmp_path_factory):
-    test_data = tmp_path_factory.mktemp('test_data')
-    dataset = test_data / 'dataset'
-
-    # should not be modified
-    data_source = Path('data/tests/ycb_video_dataset')
-    shutil.copytree(data_source, dataset, symlinks=True)
-
-    return dataset
 
 
 @pytest.fixture()
@@ -55,6 +43,13 @@ def check_frame_items(frames: Iterator[ycbvideo.datatypes.Frame]):
         assert frame.boxes is not None if frame.description.frame_sequence != 'data_syn' else frame.boxes is None
 
 
+def check_for_immediate_error(loader: YcbVideoLoader,
+                              selection: Union[List[str], Union[Path, str]],
+                              error: Type[Exception]):
+    with pytest.raises(error):
+        next(loader.frames(selection))
+
+
 def test_select_frames_from_selection(loader):
     check_frame_items(loader.frames(['1/*', '2/[2,3,5]', 'data_syn/000001']))
 
@@ -83,9 +78,44 @@ def test_frames_with_path_given_as_str(loader):
     check_frame_items(loader.frames(str(file)))
 
 
-@pytest.mark.xfail(reason='possible error in pytest execution')
 def test_frames_with_invalid_selection(loader):
-    # with pytest.raises(ValueError):
-    #     loader.frames(['1/*', '2/[*]', 'data_syn/000001'])
-    frames = [frame for frame in loader.frames(['1/*', '2/[*]', 'data_syn/000001'])]
-    assert len([loader.frames(['1/*', '2/[*]', 'data_syn/000001'])]) > 0
+    # make sure an error is raised already when the first frame
+    # is requested from the iterator even if the invalid expression
+    # is not specified first
+    check_for_immediate_error(loader, ['1/*', '2/[*]', 'data_syn/000001'], ValueError)
+
+
+def test_frames_with_missing_files(incomplete_dataset):
+    dataset = incomplete_dataset(missing_files={
+        'data/0001': {'000002-color.png', '000003-depth.png', '000004-label.png', '000005-box.txt'},
+        'data/0002': {'000002-depth.png', '000002-label.png'},
+        'data_syn': {'000002-meta.mat'}
+    })
+
+    loader = YcbVideoLoader(dataset)
+
+    # make sure an error is raised already when the first frame
+    # is requested from the iterator even if the expression
+    # specifying the missing element is not specified first
+
+    # color image is missing
+    check_for_immediate_error(loader, ['1/1', '1/2'], IOError)
+
+    # depth image is missing
+    check_for_immediate_error(loader, ['1/1', '1/3'], IOError)
+
+    # label image is missing
+    check_for_immediate_error(loader, ['1/1', '1/4'], IOError)
+
+    # box file is missing
+    check_for_immediate_error(loader, ['1/1', '1/5'], IOError)
+
+    # both depth and label images are missing
+    check_for_immediate_error(loader, ['2/1', '2/2'], IOError)
+
+    # meta.mat files are not required and can be missing
+    frame = next(loader.frames(['data_syn/2']))
+    assert frame.description == ycbvideo.datatypes.FrameDescriptor('data_syn', '000002')
+    assert frame.color is not None
+    assert frame.depth is not None
+    assert frame.label is not None
