@@ -69,19 +69,28 @@ class YcbVideoLoader:
         if frameselection.is_star_selection(frame_sequence_selection):
             actual_frame_sequence_selection = sorted(self._available_data_frame_sequences)
         else:
-            actual_frame_sequence_selection = [frameselection.format_selection_item(frame_sequence, 'frame_sequence') for
-                                               frame_sequence in frame_sequence_selection]
+            actual_frame_sequence_selection = \
+                [frameselection.format_selection_item(frame_sequence, 'frame_sequence') for
+                 frame_sequence in frame_sequence_selection]
             for index, frame_sequence in enumerate(actual_frame_sequence_selection):
                 if frame_sequence not in self._available_data_frame_sequences:
-                    raise ValueError(
+                    raise IOError(
                         f"""Data Frame Sequence is not available: {frame_sequence}
                             (specified at index {index} in {frame_selector}""")
 
         for frame_sequence in actual_frame_sequence_selection:
-            available_frames = sorted(self.get_frame_sequence(frame_sequence).get_available_frame_sets())
+            sequence = self.get_frame_sequence(frame_sequence)
+
+            if incomplete_frame_sets := sequence.get_incomplete_frame_sets():
+                raise IOError(
+                    f"""Frame sequence contains incomplete frame sets: {frame_sequence}
+                        Incomplete frame sets: {incomplete_frame_sets}""")
+
+            available_frames = sorted(sequence.get_complete_frame_sets())
 
             if frameselection.is_star_selection(frame_selection):
-                frame_descriptors.extend([datatypes.FrameDescriptor(frame_sequence, frame) for frame in available_frames])
+                frame_descriptors.extend(
+                    [datatypes.FrameDescriptor(frame_sequence, frame) for frame in available_frames])
 
                 continue
             else:
@@ -91,7 +100,7 @@ class YcbVideoLoader:
             for index, frame in enumerate(actual_frame_selection):
                 if frame not in available_frames:
                     raise ValueError(
-                        f"""Data Frame is not available: {frame_sequence}:{frame}
+                        f"""Frame is not available: {frame_sequence}/{frame}
                             (specified at index {index} in {frame_selector}""")
 
                 frame_descriptors.append(datatypes.FrameDescriptor(frame_sequence, frame))
