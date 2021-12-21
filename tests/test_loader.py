@@ -127,10 +127,3 @@ def test_frames_with_missing_files(incomplete_dataset):
     assert frame.color is not None
     assert frame.depth is not None
     assert frame.label is not None
-
-
-def test_frames_is_enforcing_complete_frame_sets_for_the_whole_frame_sequence(incomplete_dataset):
-    dataset = incomplete_dataset(missing_files={'data/0001': {'000002-color.png'}})
-    loader = YcbVideoLoader(dataset)
-
-    check_for_immediate_error(loader, ['1/1'], IOError)

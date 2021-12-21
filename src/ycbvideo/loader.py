@@ -1,9 +1,10 @@
-import logging
+import functools
 import os
 from pathlib import Path
 import random
 import re
 from typing import List, Tuple, Iterable, Union, Iterator
+import warnings
 
 from . import datatypes
 from . import frameselection
@@ -31,6 +32,7 @@ class YcbVideoLoader:
 
         return available_sequences
 
+    @functools.lru_cache()
     def get_frame_sequence(self, index: Union[str, int]) -> datatypes.FrameSequence:
         if isinstance(index, int):
             index = "{:04d}".format(index)
@@ -75,16 +77,11 @@ class YcbVideoLoader:
             for index, frame_sequence in enumerate(actual_frame_sequence_selection):
                 if frame_sequence not in self._available_data_frame_sequences:
                     raise IOError(
-                        f"""Data Frame Sequence is not available: {frame_sequence}
+                        f"""Frame Sequence is not available: {frame_sequence}
                             (specified at index {index} in {frame_selector}""")
 
         for frame_sequence in actual_frame_sequence_selection:
             sequence = self.get_frame_sequence(frame_sequence)
-
-            if incomplete_frame_sets := sequence.get_incomplete_frame_sets():
-                raise IOError(
-                    f"""Frame sequence contains incomplete frame sets: {frame_sequence}
-                        Incomplete frame sets: {incomplete_frame_sets}""")
 
             available_frames = sorted(sequence.get_complete_frame_sets())
 
@@ -99,9 +96,16 @@ class YcbVideoLoader:
 
             for index, frame in enumerate(actual_frame_selection):
                 if frame not in available_frames:
-                    raise ValueError(
-                        f"""Frame is not available: {frame_sequence}/{frame}
-                            (specified at index {index} in {frame_selector}""")
+                    if frame in (incomplete_frame_sets := sequence.get_incomplete_frame_sets()):
+                        missing_files = incomplete_frame_sets[frame]
+
+                        raise IOError(
+                            f"""Files for frame are missing: {frame_sequence}/{frame}
+                                (specified at index {index} in {frame_selector}) Missing: {missing_files}""")
+                    else:
+                        raise IOError(
+                            f"""Frame is not available: {frame_sequence}/{frame}
+                                (specified at index {index} in {frame_selector}""")
 
                 frame_descriptors.append(datatypes.FrameDescriptor(frame_sequence, frame))
 
