@@ -127,3 +127,55 @@ def test_frames_with_missing_files(incomplete_dataset):
     assert frame.color is not None
     assert frame.depth is not None
     assert frame.label is not None
+
+
+def test_frames_info_with_no_missing_frames(loader):
+    info = loader.frames_info()
+    found_sequences = info.keys()
+
+    assert len(found_sequences) == 3
+
+    for sequence in found_sequences:
+        found_frame_sets = info[sequence]
+
+        assert len(found_frame_sets) == 5
+        # make sure there is no list of missing items for any of the found frame sets
+        assert all(map(lambda missing_items: missing_items is None, found_frame_sets.values()))
+
+
+def test_frames_info_with_missing_frames(incomplete_dataset):
+    dataset = incomplete_dataset(missing_files={
+        'data/0001': {'000002-color.png', '000005-box.txt'},
+        'data/0002': {'000002-depth.png', '000002-label.png'},
+        'data_syn': {'000002-meta.mat', '000004-label.png'}
+    })
+
+    loader = YcbVideoLoader(dataset)
+    info = loader.frames_info()
+    expected_info = {
+        '0001': {
+            '000001': None,
+            '000002': ['color'],
+            '000003': None,
+            '000004': None,
+            '000005': ['box']
+        },
+        '0002': {
+            '000001': None,
+            '000002': ['depth', 'label'],
+            '000003': None,
+            '000004': None,
+            '000005': None
+        },
+        # *-meta.mat files are not required nor checked for
+        'data_syn': {
+            '000001': None,
+            '000002': None,
+            '000003': None,
+            '000004': ['label'],
+            '000005': None
+        }
+    }
+
+    # entries have to be the same, not the order
+    assert info == expected_info

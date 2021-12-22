@@ -1,1 +1,2 @@
 include src/ycbvideo/VERSION
+include src/ycbvideo/frame_info.txt

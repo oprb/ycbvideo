@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 import random
 import re
-from typing import List, Tuple, Iterable, Union, Iterator
+from typing import List, Tuple, Iterable, Union, Iterator, Dict, Optional
 import warnings
 
 from . import datatypes
@@ -23,6 +23,24 @@ class YcbVideoLoader:
     """
         path: Path to the YCB-Video dataset root directory
     """
+
+    def frames_info(self) -> Dict[str, Dict[str, Optional[List[str]]]]:
+        available_sequences = sorted(self.get_available_frame_sequences())
+
+        info = {}
+        for sequence_identifier in available_sequences:
+            sequence = self.get_frame_sequence(sequence_identifier)
+            complete_frame_sets, incomplete_frame_sets = sequence.get_available_frame_sets()
+
+            frame_sets = {}
+            for complete_set in complete_frame_sets:
+                frame_sets[complete_set] = None
+            for identifier, incomplete_set in incomplete_frame_sets.items():
+                frame_sets[identifier] = incomplete_set
+
+            info[sequence_identifier] = frame_sets
+
+        return info
 
     def get_available_frame_sequences(self) -> List[str]:
         available_sequences = os.listdir(self._data_directory)
