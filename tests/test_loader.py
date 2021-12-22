@@ -2,6 +2,7 @@ from pathlib import Path
 import shutil
 from typing import Iterator, Union, List, Type
 
+import imageio
 import pytest
 
 import ycbvideo.datatypes
@@ -48,6 +49,22 @@ def check_for_immediate_error(loader: YcbVideoLoader,
                               error: Type[Exception]):
     with pytest.raises(error):
         next(loader.frames(selection))
+
+
+def test_frames_with_sequence_0000(loader):
+    # make sure that there is no confusion that frame sequences start with index '0000'
+    # but frames with index '000001'
+    frame = next(loader.frames(['0/1']))
+
+    assert frame.description == ('0000', '000001')
+
+    boxes = frame.boxes
+    # compare every line with the corresponding box item
+    with open('data/tests/ycb_video_dataset/data/0000/000001-box.txt', 'r') as f:
+        for index, line in enumerate(f):
+            box = boxes[index]
+            coordinate1, coordinate2, coordinate3, coordinate4 = box.coordinates
+            assert f"{box.label} {coordinate1} {coordinate2} {coordinate3} {coordinate4}\n" == line
 
 
 def test_select_frames_from_selection(loader):
@@ -133,7 +150,7 @@ def test_frames_info_with_no_missing_frames(loader):
     info = loader.frames_info()
     found_sequences = info.keys()
 
-    assert len(found_sequences) == 3
+    assert len(found_sequences) == 4
 
     for sequence in found_sequences:
         found_frame_sets = info[sequence]
@@ -153,6 +170,13 @@ def test_frames_info_with_missing_frames(incomplete_dataset):
     loader = YcbVideoLoader(dataset)
     info = loader.frames_info()
     expected_info = {
+        '0000': {
+            '000001': None,
+            '000002': None,
+            '000003': None,
+            '000004': None,
+            '000005': None
+        },
         '0001': {
             '000001': None,
             '000002': ['color'],
