@@ -36,9 +36,18 @@ at once, therefore, frames are loaded one at a time. Especially in case your wor
 subset of all the data from the dataset, e.g. having only the frame sequences 0001 - 0010 on your
 disk, you'd want to be sure that the data is really available when you start working with the
 frames. Therefore, after you specify all the frames you need by frame selection expression(s),
-it is made sure, that all the frames are on your disk and you didn't forget to put e.g. frame
-sequence 0010 on your disk. This is especially helpful since the dataset is of most use for machine
-learning tasks. Getting a "file not found" error after hours of training could be very frustrating.
+an automatic check is made to ensure that all the frames are on your disk and you didn't forget to put
+e.g. frame sequence 0010 on your disk. This is especially helpful since the dataset is of most use
+for machine learning tasks. Getting a "file not found" error after hours of training could be very
+frustrating.
+
+By running
+
+```shell
+python -m ycbvideo /path/to/data
+```
+
+you can manually check the integrity of the portion of the dataset on your disk.
 
 ## Installation
 
@@ -48,6 +57,7 @@ install it. Python >= 3.8 is required.
 ## Usage
 
 First, import the package and create a loader. Provide the path to the dataset directory.
+Do not modify the data afterwards!
 
 ```python
 import ycbvideo
