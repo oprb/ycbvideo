@@ -47,7 +47,7 @@ By running
 python -m ycbvideo /path/to/data
 ```
 
-you can manually check the integrity of the portion of the dataset on your disk.
+you can manually inspect and check the integrity of the portion of the dataset on your disk.
 
 ## Installation
 
