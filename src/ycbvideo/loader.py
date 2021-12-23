@@ -2,9 +2,7 @@ import functools
 import os
 from pathlib import Path
 import random
-import re
-from typing import List, Tuple, Iterable, Union, Iterator, Dict, Optional
-import warnings
+from typing import List, Iterable, Union, Iterator, Dict, Optional
 
 from . import datatypes
 from . import frameselection
@@ -64,18 +62,6 @@ class YcbVideoLoader:
 
     def get_frame_sequences(self, indexes: Iterable[Union[int, str]]) -> List[datatypes.FrameSequence]:
         return [self.get_frame_sequence(index) for index in indexes]
-
-    def get_frame(self, index: Union[str, Tuple[str, str]]) -> datatypes.Frame:
-        if isinstance(index, str):
-            if match := re.match(r'^(?P<framesequence>[0-9]{4}):(?P<frame>[0-9]{6})$', index):
-                frame_sequence = match.group('framesequence')
-                frame = match.group('frame')
-
-                index = (frame_sequence, frame)
-            else:
-                raise ValueError(f"Invalid pattern (<frame_sequence>:<frame> required): {index}")
-
-        return self.get_frame_sequence(index[0]).get_frame(index[1])
 
     def get_frame_descriptors(self, frame_selector: frameselection.FrameSelector) -> List[datatypes.FrameDescriptor]:
         frame_descriptors = []
