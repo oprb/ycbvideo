@@ -106,3 +106,13 @@ random.seed(42)
 for frame in loader.frames('imagesets/train.txt', shuffle=True):
     // do something with it
 ```
+
+## Roadmap
+
+* Allow accessing all frame sequences from the `data` directory by *data*
+  as the corresponding selection expression.
+* Allow accessing frames and frame sequences in ranges with something like
+  *3:10:2* as the corresponding selection expression and similar to how
+  those are handled when accessing e.g. a list in Python.
+* Make other data from the dataset easily accessible where useful
+* Test, build and publish the package by using *GitHub Actions*
