@@ -2,13 +2,27 @@ from pathlib import Path
 import re
 from typing import List, NamedTuple, Final, Union, Iterable
 
-SELECTION_PATTERN: Final[str] = r'\[([0-9]{1,n}(,[0-9]{1,n})*)\]|([0-9]{1,n})|\*'
-FRAMESEQUENCE_SELECTION_PATTERN: Final[str] = SELECTION_PATTERN.replace('n', '4') + r'|data_syn'
-FRAME_SELECTION_PATTERN: Final[str] = SELECTION_PATTERN.replace('n', '6')
-COMBINED_PATTERN: Final[re.Pattern] = re.compile(
-    f"^(?P<framesequence>{FRAMESEQUENCE_SELECTION_PATTERN})/(?P<frame>{FRAME_SELECTION_PATTERN})$")
+SPECIAL_FRAME_SEQUENCE_ITEMS: Final[List[str]] = ['data', 'data_syn']
 LIST_PATTERN: Final[re.Pattern] = re.compile(r'^\[(?P<items>[0-9]+(,[0-9]+)*)\]$')
-SINGLE_ITEM_PATTERN: Final[re.Pattern] = re.compile(r'^(?P<item>[0-9]+|\*|data_syn)$')
+SINGLE_ITEM_PATTERN: Final[re.Pattern] = re.compile(r'^(?P<item>[0-9]+|\*|data|data_syn)$')
+
+
+def get_selection_expression_pattern() -> re.Pattern:
+    # most general pattern, valid for a frame sequence selection or a frame selection
+    selection_pattern = r'\[([0-9]{1,n}(,[0-9]{1,n})*)\]|([0-9]{1,n})|\*'
+
+    frame_selection_pattern = selection_pattern.replace('n', '6')
+
+    frame_sequence_selection_pattern =selection_pattern.replace('n', '4')
+    for item in SPECIAL_FRAME_SEQUENCE_ITEMS:
+        frame_sequence_selection_pattern += f"|{item}"
+
+    return re.compile(
+        f"^(?P<framesequence>{frame_sequence_selection_pattern})/(?P<frame>{frame_selection_pattern})$"
+    )
+
+
+SELECTION_EXPRESSION_PATTERN: Final[re.Pattern] = get_selection_expression_pattern()
 
 
 class FrameSelector(NamedTuple):
@@ -22,9 +36,9 @@ def get_frame_selectors(selections: List[str]) -> List[FrameSelector]:
     for index, selection in enumerate(selections):
         try:
             frame_selectors.append(get_frame_selector(selection))
-        except ValueError:
+        except ValueError as error:
             raise ValueError(
-                f"Selection syntax is incorrect: Selection '{selection}' at index {index}") from ValueError
+                f"Selection syntax is incorrect: Selection '{selection}' at index {index}") from error
 
     return frame_selectors
 
@@ -34,7 +48,7 @@ def is_star_selection(selection: List[str]) -> bool:
 
 
 def get_frame_selector(selection: str) -> FrameSelector:
-    if match := COMBINED_PATTERN.match(selection):
+    if match := SELECTION_EXPRESSION_PATTERN.match(selection):
         frame_sequence_selection = match.group('framesequence')
         frame_selection = match.group('frame')
 
@@ -55,14 +69,22 @@ def get_items(selection: str) -> List[str]:
     return items
 
 
-def format_selection_item(item: str, kind_of_item: str) -> str:
-    if not (kind_of_item == 'frame_sequence' or kind_of_item == 'frame'):
-        raise ValueError(
-            f"Unknown kind of descriptor (has to be either 'frame_sequence' or 'frame'): {kind_of_item}")
-    if item == '*' or item == 'data_syn':
+def normalize_sequence_selection_item(item: str) -> str:
+    if item in ['*', *SPECIAL_FRAME_SEQUENCE_ITEMS]:
         return item
+    elif item.isdigit() and len(item) <= 4:
+        return "{:04d}".format(int(item))
+    else:
+        raise ValueError(f"Invalid frame sequence selection item: {item}")
 
-    return "{:04d}".format(int(item)) if kind_of_item == 'frame_sequence' else "{:06d}".format(int(item))
+
+def normalize_frame_selection_item(item: str) -> str:
+    if item == '*':
+        return item
+    elif item.isdigit() and len(item) <= 6:
+        return "{:06d}".format(int(item))
+    else:
+        raise ValueError(f"Invalid frame selection item: {item}")
 
 
 def load_frame_selectors_from_file(file: Union[Path, str]) -> Iterable[FrameSelector]:

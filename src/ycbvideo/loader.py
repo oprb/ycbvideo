@@ -17,7 +17,7 @@ class YcbVideoLoader:
         self._path = utils.validate_directory_path(path)
         self._data_directory = self._path / 'data'
         self._data_syn_directory = self._path / 'data_syn'
-        self._available_data_frame_sequences = self.get_available_frame_sequences()
+        self._available_frame_sequences = self.get_available_frame_sequences()
     """
         path: Path to the YCB-Video dataset root directory
     """
@@ -40,8 +40,11 @@ class YcbVideoLoader:
 
         return info
 
+    def get_available_data_frame_sequences(self) -> List[str]:
+        return os.listdir(self._data_directory)
+
     def get_available_frame_sequences(self) -> List[str]:
-        available_sequences = os.listdir(self._data_directory)
+        available_sequences = self.get_available_data_frame_sequences()
 
         if self._data_syn_directory.exists():
             available_sequences.append(self._data_syn_directory.name)
@@ -73,13 +76,15 @@ class YcbVideoLoader:
         actual_frame_selection = None
 
         if frameselection.is_star_selection(frame_sequence_selection):
-            actual_frame_sequence_selection = sorted(self._available_data_frame_sequences)
+            actual_frame_sequence_selection = sorted(self._available_frame_sequences)
+        elif frame_sequence_selection == ['data']:
+            actual_frame_sequence_selection = sorted((self.get_available_data_frame_sequences()))
         else:
             actual_frame_sequence_selection = \
-                [frameselection.format_selection_item(frame_sequence, 'frame_sequence') for
+                [frameselection.normalize_sequence_selection_item(frame_sequence) for
                  frame_sequence in frame_sequence_selection]
             for index, frame_sequence in enumerate(actual_frame_sequence_selection):
-                if frame_sequence not in self._available_data_frame_sequences:
+                if frame_sequence not in self._available_frame_sequences:
                     raise IOError(
                         f"""Frame Sequence is not available: {frame_sequence}
                             (specified at index {index} in {frame_selector}""")
@@ -95,7 +100,7 @@ class YcbVideoLoader:
 
                 continue
             else:
-                actual_frame_selection = [frameselection.format_selection_item(frame, 'frame') for
+                actual_frame_selection = [frameselection.normalize_frame_selection_item(frame) for
                                           frame in frame_selection]
 
             for index, frame in enumerate(actual_frame_selection):
@@ -148,6 +153,9 @@ class YcbVideoLoader:
             - a '*' expressing all available elements.
         Also, 'data_syn' can be used as a frame sequence selection
         element to specify the data_syn frame sequence.
+        To get all available frame sequences except for data_syn,
+        'data' can be specified as a frame sequence selection
+        element.
         A frame sequence selection expression and a frame selection
         expression together form a selection expression. Between both
         frame sequence selection expression and frame selection

@@ -1,8 +1,7 @@
 from pathlib import Path
 import shutil
-from typing import Iterator, Union, List, Type
+from typing import Iterator, Union, List, Type, Tuple
 
-import imageio
 import pytest
 
 import ycbvideo.datatypes
@@ -42,6 +41,13 @@ def check_frame_items(frames: Iterator[ycbvideo.datatypes.Frame]):
         assert frame.label is not None
 
         assert frame.boxes is not None if frame.description.frame_sequence != 'data_syn' else frame.boxes is None
+
+
+def check_descriptors(frames: Iterator[ycbvideo.datatypes.Frame], expected_descriptions: List[Tuple[str, str]]):
+    frame_items = list(frames)
+
+    for frame, expected_description in zip(frame_items, expected_descriptions):
+        assert frame.description == expected_description
 
 
 def check_for_immediate_error(loader: YcbVideoLoader,
@@ -93,6 +99,49 @@ def test_frames_with_path_given_as_str(loader):
 
     # with path given as pathlib.Path object
     check_frame_items(loader.frames(str(file)))
+
+
+def test_frames_with_data_specified(loader):
+    frames = list()
+
+    # with a single frame
+    check_descriptors(
+        loader.frames(['data/2']),
+        [('0000', '000002'),
+         ('0001', '000002'),
+         ('0002', '000002')]
+    )
+
+    # with a list of frames
+    check_descriptors(
+        loader.frames(['data/[1,4]']),
+        [('0000', '000001'),
+         ('0000', '000004'),
+         ('0001', '000001'),
+         ('0001', '000004'),
+         ('0002', '000001'),
+         ('0002', '000004')]
+    )
+
+    # with star expression
+    check_descriptors(
+        loader.frames(['data/*']),
+        [('0000', '000001'),
+         ('0000', '000002'),
+         ('0000', '000003'),
+         ('0000', '000004'),
+         ('0000', '000005'),
+         ('0001', '000001'),
+         ('0001', '000002'),
+         ('0001', '000003'),
+         ('0001', '000004'),
+         ('0001', '000005'),
+         ('0002', '000001'),
+         ('0002', '000002'),
+         ('0002', '000003'),
+         ('0002', '000004'),
+         ('0002', '000005')]
+    )
 
 
 def test_frames_with_invalid_selection(loader):

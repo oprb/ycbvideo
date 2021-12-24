@@ -29,7 +29,9 @@ the order of your expressions. Have a look at the documentation for the `YCBVide
 method for more ways and examples of how to specify the frames you're interested in.
 
 The `data_syn` directory is also handled as a frame sequence, *\*/42* therefore would also include
-the 42th frame from the `data_syn` frame sequence.
+the 42th frame from the `data_syn` frame sequence. Leaving exactly this one out can be achieved
+with *data/42*, i.e. gets you the 42th frame for each frame sequence except the `data_syn` frame
+sequence. Contrarily, *data_syn/42* gets you just this single frame.
 
 Because the dataset is huge (~273 GB), it wouldn't make much sense to load all the data into memory
 at once, therefore, frames are loaded one at a time. Especially in case your working with just a

@@ -24,13 +24,16 @@ INVALID_SELECTION_PARTS = [
     ('', None),
     ('[]', None),
     ('[*]', None),
+    ('[data]', None),
+    ('[data_syn]', None),
     ('42,', None),
     ('42,43,44,', None)
 ]
 
 # selections only valid for sequences
 SPECIAL_SEQUENCE_SELECTIONS = [
-    ('data_syn', 'data_syn')
+    ('data_syn', 'data_syn'),
+    ('data', 'data')
 ]
 
 # selections only valid for frames
@@ -173,17 +176,26 @@ def test_get_items(expression_and_items):
         raise TypeError(f"Wrong input to test method: {expression_and_items}")
 
 
-@pytest.mark.parametrize('item_and_kind_and_expectation',
-                         [('data_syn', 'frame_sequence', 'data_syn'),
-                          ('*', 'frame_sequence', '*'),
-                          ('*', 'frame', '*'),
-                          ('42', 'frame_sequence', '0042'),
-                          ('0042', 'frame_sequence', '0042'),
-                          ('42', 'frame', '000042'),
-                          ('000042', 'frame', '000042')])
-def test_format_selection_item(item_and_kind_and_expectation):
-    item, kind, expectation = item_and_kind_and_expectation
-    assert frameselection.format_selection_item(item, kind) == expectation
+@pytest.mark.parametrize('item_and_expectation',
+                         [('*', '*'),
+                          ('data', 'data'),
+                          ('data_syn', 'data_syn'),
+                          ('42', '0042'),
+                          ('0042', '0042')])
+def test_normalize_sequence_selection_item(item_and_expectation):
+    item, expectation = item_and_expectation
+
+    assert frameselection.normalize_sequence_selection_item(item) == expectation
+
+
+@pytest.mark.parametrize('item_and_expectation',
+                         [('*', '*'),
+                          ('42', '000042'),
+                          ('000042', '000042')])
+def test_normalize_frame_selection_item(item_and_expectation):
+    item, expectation = item_and_expectation
+
+    assert frameselection.normalize_frame_selection_item(item) == expectation
 
 
 def test_load_frame_selectors_from_file(tmp_path):
