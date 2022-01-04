@@ -8,8 +8,11 @@ SINGLE_ITEM_PATTERN: Final[re.Pattern] = re.compile(r'^(?P<item>[0-9]+|\*|data|d
 
 
 def get_selection_expression_pattern() -> re.Pattern:
+    numbered_item_pattern = r'([0-9]{1,n})'
+    list_pattern = r'\[([0-9]{1,n}(,[0-9]{1,n})*)\]'
+    star_pattern = r'\*'
     # most general pattern, valid for a frame sequence selection or a frame selection
-    selection_pattern = r'\[([0-9]{1,n}(,[0-9]{1,n})*)\]|([0-9]{1,n})|\*'
+    selection_pattern = f"{numbered_item_pattern}|{list_pattern}|{star_pattern}"
 
     frame_selection_pattern = selection_pattern.replace('n', '6')
 
