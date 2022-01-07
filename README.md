@@ -176,7 +176,5 @@ you can manually inspect and check the integrity of the portion of the dataset o
 
 ## Roadmap
 
-* Allow accessing all frame sequences from the `data` directory by *data*
-  as the corresponding selection expression.
 * Make other data from the dataset easily accessible where useful
 * Test, build and publish the package by using *GitHub Actions*
