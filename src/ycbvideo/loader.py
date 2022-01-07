@@ -69,20 +69,25 @@ class YcbVideoLoader:
     def get_frame_descriptors(self, frame_selector: frameselection.FrameSelector) -> List[datatypes.FrameDescriptor]:
         frame_descriptors = []
 
-        frame_sequence_selection = frameselection.get_items(frame_selector.frame_sequence_selection)
-        frame_selection = frameselection.get_items(frame_selector.frame_selection)
-
         actual_frame_sequence_selection = None
         actual_frame_selection = None
 
-        if frameselection.is_star_selection(frame_sequence_selection):
+        if frame_selector.frame_sequence_selection == '*':
             actual_frame_sequence_selection = sorted(self._available_frame_sequences)
-        elif frame_sequence_selection == ['data']:
+        elif frame_selector.frame_sequence_selection == 'data':
             actual_frame_sequence_selection = sorted((self.get_available_data_frame_sequences()))
+        elif sequence_range := frameselection.range_selection(frame_selector.frame_sequence_selection, 'sequence'):
+            try:
+                actual_frame_sequence_selection = utils.expand_range(
+                    sequence_range.as_tuple(),
+                    sorted(self.get_available_data_frame_sequences()))
+            except utils.MissingItemError as error:
+                raise IOError(
+                    f"Frame sequence specified in range as '{error.usage}' is not available: '{error.item}'") from error
         else:
             actual_frame_sequence_selection = \
                 [frameselection.normalize_sequence_selection_item(frame_sequence) for
-                 frame_sequence in frame_sequence_selection]
+                 frame_sequence in frameselection.get_items(frame_selector.frame_sequence_selection)]
             for index, frame_sequence in enumerate(actual_frame_sequence_selection):
                 if frame_sequence not in self._available_frame_sequences:
                     raise IOError(
@@ -94,14 +99,25 @@ class YcbVideoLoader:
 
             available_frames = sorted(sequence.get_complete_frame_sets())
 
-            if frameselection.is_star_selection(frame_selection):
+            if frame_selector.frame_selection == '*':
                 frame_descriptors.extend(
                     [datatypes.FrameDescriptor(frame_sequence, frame) for frame in available_frames])
 
                 continue
+            elif frame_range := frameselection.range_selection(frame_selector.frame_selection, 'frame'):
+                try:
+                    actual_frame_selection = utils.expand_range(frame_range.as_tuple(), available_frames)
+                except utils.MissingItemError as error:
+                    raise IOError(
+                        f"Frame specified in range as '{error.usage}' is not available: '{error.item}'") from error
+
+                frame_descriptors.extend(
+                    [datatypes.FrameDescriptor(frame_sequence, frame) for frame in actual_frame_selection])
+
+                continue
             else:
                 actual_frame_selection = [frameselection.normalize_frame_selection_item(frame) for
-                                          frame in frame_selection]
+                                          frame in frameselection.get_items(frame_selector.frame_selection)]
 
             for index, frame in enumerate(actual_frame_selection):
                 if frame not in available_frames:
@@ -150,6 +166,7 @@ class YcbVideoLoader:
         expression containing
             - a single element
             - a list of comma-delimited elements
+            - a range of elements similar to slicing works in Python
             - a '*' expressing all available elements.
         Also, 'data_syn' can be used as a frame sequence selection
         element to specify the data_syn frame sequence.
@@ -185,9 +202,14 @@ class YcbVideoLoader:
             - 'data_syn/[1,2]'
                 Get the 1st and 2nd frame from the data_syn frame
                 sequence
-            - '[data_syn,2,1]:*'
-                Get all available frames from the data_syn, 2nd and 1st
-                frame sequence each
+            - 42:56:1/1
+                Get the 1st frame from each frame sequence between frame
+                sequence 42 (inclusive) and 56 (exclusive) by taking steps
+                of length 1, i.e. when frame sequence 42 to frame sequence
+                55 all are available, 14 frames would be selected
+            - 42/::-2
+                Get every other frame from frame sequence 42 in reverse
+                order from all available frames of frame sequence 42
 
         If `shuffle` is set to 'False', the frames will be returned
         in exactly the order as specified by the order of selection

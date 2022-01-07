@@ -252,3 +252,66 @@ def test_frames_info_with_missing_frames(incomplete_dataset):
 
     # entries have to be the same, not the order
     assert info == expected_info
+
+
+def test_frames_with_valid_range_expressions(loader):
+    frames = list(loader.frames(['0:1/5::-2', 'data_syn/4::-1']))
+
+    assert len(frames) == 7
+
+    expected_descriptors = [
+        ('0000', '000005'),
+        ('0000', '000003'),
+        ('0000', '000001'),
+        ('data_syn', '000004'),
+        ('data_syn', '000003'),
+        ('data_syn', '000002'),
+        ('data_syn', '000001'),
+    ]
+
+    for frame, expected_descriptor in zip(frames, expected_descriptors):
+        assert frame.description == expected_descriptor
+
+
+def test_frames_with_range_expressions_and_missing_frames(incomplete_dataset):
+    dataset = incomplete_dataset(missing_files={
+        'data/0001': {'000003-color.png', '000003-depth.png', '000003-label.png', '000003-box.txt'}
+    })
+
+    frames = list(YcbVideoLoader(dataset).frames(['1/:']))
+
+    assert len(frames) == 4
+
+    expected_descriptors = [
+        ('0001', '000001'),
+        ('0001', '000002'),
+        ('0001', '000004'),
+        ('0001', '000005'),
+    ]
+
+    for frame, expected_descriptor in zip(frames, expected_descriptors):
+        assert frame.description == expected_descriptor
+
+
+def test_frames_with_missing_frames_specified_as_start_or_stop_in_range_expression(incomplete_dataset):
+    dataset = incomplete_dataset(missing_files={
+        'data/0001': {'000003-color.png', '000003-depth.png', '000003-label.png', '000003-box.txt'}
+    })
+
+    loader = YcbVideoLoader(dataset)
+
+    # missing frame specified as start
+    check_for_immediate_error(loader, ['1/3:'], IOError)
+
+    # missing frame specified as stop
+    check_for_immediate_error(loader, ['1/:3'], IOError)
+
+
+def test_frames_with_missing_sequences_specified_as_start_or_stop_in_range_expression(loader):
+    # the test data only contains frames from the sequences 0000, 0001, 0002, data_syn, not 0042
+
+    # missing frame specified as start
+    check_for_immediate_error(loader, ['0042:/:'], IOError)
+
+    # missing frame specified as stop
+    check_for_immediate_error(loader, [':0042/:'], IOError)

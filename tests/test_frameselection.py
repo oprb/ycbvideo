@@ -16,7 +16,21 @@ VALID_SELECTION_PARTS = [
     ('0420', '0420'),
     ('[42]', '[42]'),
     ('[0042,43,0440]', '[0042,43,0440]'),
-    ('*', '*'),
+    ('*', '*')
+]
+
+# range selection parts, valid for both sequence selection and frame selection
+VALID_RANGE_SELECTION_PARTS = [
+    ('42:56', '42:56'),
+    ('42:56:2', '42:56:2'),
+    ('42:', '42:'),
+    ('42::2', '42::2'),
+    (':56', ':56'),
+    (':56:2', ':56:2'),
+    (':', ':'),
+    ('::', '::'),
+    ('::-2', '::-2'),
+    ('0042:56:', '0042:56:')
 ]
 
 # parts invalid both for sequence selection and frame selection
@@ -27,7 +41,13 @@ INVALID_SELECTION_PARTS = [
     ('[data]', None),
     ('[data_syn]', None),
     ('42,', None),
-    ('42,43,44,', None)
+    ('42,43,44,', None),
+    ('-42:', None),
+    (':-56', None),
+    ('[:]', None),
+    ('[::]', None),
+    ('[42:]', None),
+    ('[:56]', None)
 ]
 
 # selections only valid for sequences
@@ -45,8 +65,16 @@ SPECIAL_FRAME_SELECTIONS = [
 
 VALID_SEQUENCE_SELECTIONS = [*VALID_SELECTION_PARTS, *SPECIAL_SEQUENCE_SELECTIONS]
 VALID_FRAME_SELECTIONS = [*VALID_SELECTION_PARTS, *SPECIAL_FRAME_SELECTIONS]
-SEQUENCE_SELECTIONS = [*VALID_SELECTION_PARTS, *INVALID_SELECTION_PARTS, *SPECIAL_SEQUENCE_SELECTIONS]
-FRAME_SELECTIONS = [*VALID_SELECTION_PARTS, *INVALID_SELECTION_PARTS, *SPECIAL_FRAME_SELECTIONS]
+SEQUENCE_SELECTIONS = [
+    *VALID_SELECTION_PARTS,
+    *VALID_RANGE_SELECTION_PARTS,
+    *INVALID_SELECTION_PARTS,
+    *SPECIAL_SEQUENCE_SELECTIONS]
+FRAME_SELECTIONS = [
+    *VALID_SELECTION_PARTS,
+    *VALID_RANGE_SELECTION_PARTS,
+    *INVALID_SELECTION_PARTS,
+    *SPECIAL_FRAME_SELECTIONS]
 
 
 def combine_sequence_and_frame_selection(
@@ -106,7 +134,15 @@ def list_of_expressions_and_list_of_selectors(
 
 
 def expression_and_items() -> Iterable[Tuple[str, Optional[List[str]]]]:
-    selections: List[Tuple[str, Optional[str]]] = [*SEQUENCE_SELECTIONS, *FRAME_SELECTIONS]
+    selections: List[Tuple[str, Optional[str]]] = [
+        # sequence selections except range selections
+        *VALID_SELECTION_PARTS,
+        *INVALID_SELECTION_PARTS,
+        *SPECIAL_SEQUENCE_SELECTIONS,
+        # frame selections except range selections
+        *VALID_SELECTION_PARTS,
+        *INVALID_SELECTION_PARTS,
+        *SPECIAL_FRAME_SELECTIONS]
 
     for selection in selections:
         expression, expectation = selection
