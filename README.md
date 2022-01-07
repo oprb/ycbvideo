@@ -120,7 +120,7 @@ for frame in loader.frames('imagesets/train.txt', shuffle=True):
 
 Selection expressions consist of two parts: An expression for specifying one
 or more frame sequences and an expression for specifying one or more frames.
-A */* combines both parts: *<FRAME_SEQUENCE_SELECTION>/<FRAME_SELECTION>*.
+A */* combines both parts: *\<FRAME_SEQUENCE_SELECTION\>/\<FRAME_SELECTION\>*.
 Most expressions are valid for both frame sequences and frames:
 
 * *42*: Selects a single element *42* (*"Single element expression"*)
@@ -141,7 +141,7 @@ Two "single element expressions" only apply to the selection of frame sequences:
 *42* or *47*, not *data_syn* or *data*.
 
 "Range expressions" are quite comparable to the slicing operation in Python. Given the
-expression *<START>:<STOP>:<STEP>*, all the elements *START*, *STOP* and *STEP* are
+expression *\<START\>:\<STOP\>:\<STEP\>*, all the elements *START*, *STOP* and *STEP* are
 optional. If *START* is omitted, *START* equals the *smallest* *available* element,
 if *STOP* is omitted, it equals the *largest* *available* element. If *STEP* is
 omitted, the step size equals *1*. *START* and *STOP* both have to be *positive* integers,
