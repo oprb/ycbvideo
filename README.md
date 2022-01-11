@@ -176,5 +176,6 @@ you can manually inspect and check the integrity of the portion of the dataset o
 
 ## Roadmap
 
+* Perform tests also on Windows
 * Make other data from the dataset easily accessible where useful
 * Test, build and publish the package by using *GitHub Actions*

@@ -93,13 +93,11 @@ class FrameSequence:
         if index not in self.get_complete_frame_sets():
             raise IOError(f"Frame set does not exist: {index}")
 
-        partial_path = f"{self._path}/{index}-"
-
         return Frame(
-            color=imageio.imread(partial_path + 'color.png'),
-            depth=imageio.imread(partial_path + 'depth.png'),
+            color=imageio.imread(self._path / f"{index}-color.png"),
+            depth=imageio.imread(self._path / f"{index}-depth.png"),
             boxes=self._get_boxes(index) if self._sequence_name != 'data_syn' else None,
-            label=imageio.imread(partial_path + 'label.png'),
+            label=imageio.imread(self._path / f"{index}-label.png"),
             description=FrameDescriptor(self._path.name, index))
 
     def _get_boxes(self, index: str) -> List[Box]:
