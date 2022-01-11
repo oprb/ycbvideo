@@ -310,8 +310,8 @@ def test_frames_with_missing_frames_specified_as_start_or_stop_in_range_expressi
 def test_frames_with_missing_sequences_specified_as_start_or_stop_in_range_expression(loader):
     # the test data only contains frames from the sequences 0000, 0001, 0002, data_syn, not 0042
 
-    # missing frame specified as start
+    # missing sequence specified as start
     check_for_immediate_error(loader, ['0042:/:'], IOError)
 
-    # missing frame specified as stop
+    # missing sequence specified as stop
     check_for_immediate_error(loader, [':0042/:'], IOError)
