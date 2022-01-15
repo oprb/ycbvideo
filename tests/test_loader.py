@@ -315,3 +315,46 @@ def test_frames_with_missing_sequences_specified_as_start_or_stop_in_range_expre
 
     # missing sequence specified as stop
     check_for_immediate_error(loader, [':0042/:'], IOError)
+
+
+def test_frames_with_start_equals_stop_in_range_expression(loader):
+    # since an empty selection is of no use, an exception is thrown
+    # but the type of exception does not really matter
+
+    # when selecting frame sequences
+    check_for_immediate_error(loader, ['0000:0000/2'], Exception)
+
+    # when selecting frames
+    check_for_immediate_error(loader, ['0000/2:2'], Exception)
+
+
+def test_frames_with_step_size_of_zero(loader):
+    # the type of exception does not really matter
+
+    # in a frame sequence selection and with '0'
+    check_for_immediate_error(loader, ['::0/1'], Exception)
+
+    # in a frame sequence selection and with '-0'
+    check_for_immediate_error(loader, ['::-0/1'], Exception)
+
+    # in a frame selection and with '0'
+    check_for_immediate_error(loader, ['1/::0'], Exception)
+
+    # in a frame selection and with '-0'
+    check_for_immediate_error(loader, ['1/::-0'], Exception)
+
+
+def test_frames_with_negative_start_or_stop(loader):
+    # the type of exception does not really matter
+
+    # frame sequence selection with negative start
+    check_for_immediate_error(loader, ['-1:/1'], Exception)
+
+    # frame sequence selection with negative stop
+    check_for_immediate_error(loader, [':-1/1'], Exception)
+
+    # frame selection with negative start
+    check_for_immediate_error(loader, ['1/-1:'], Exception)
+
+    # frame selection with negative stop
+    check_for_immediate_error(loader, ['1/:-1'], Exception)
