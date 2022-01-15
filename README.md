@@ -124,12 +124,12 @@ A */* combines both parts: *\<FRAME_SEQUENCE_SELECTION\>/\<FRAME_SELECTION\>*.
 Most expressions are valid for both frame sequences and frames:
 
 * *42*: Selects a single element *42* (*"Single element expression"*)
-* *[42,47,56]*: Selects a list of elements, the elements *42*, *47* and *56* in
+* *[42,56,47]*: Selects a list of elements, the elements *42*, *56* and *47* in
   exactly the order specified (*"List expression"*)
-* *42:47:1*: Selects the elements between element *42* (inclusive) upt to element
+* *42:47:1*: Selects the elements between element *42* (inclusive) up to element
   *47* (exclusive), i.e. the elements *42*, *43*, *44*, *45* and *46*
   (*"Range expression"*)
-* *\**: Selects *all* elements (*"Star expression"*)
+* *\**: Selects *all* elements in ascending order (*"Star expression"*)
 
 Two "single element expressions" only apply to the selection of frame sequences:
 
@@ -138,15 +138,17 @@ Two "single element expressions" only apply to the selection of frame sequences:
   (i.e. all the subdirectories in the `data` directory)
 
 "List expressions" and "range expressions" can only contain "numbered" elements like
-*42* or *47*, not *data_syn* or *data*.
+*42* or *47*, not *data_syn* nor *data*.
 
 "Range expressions" are quite comparable to the slicing operation in Python. Given the
 expression *\<START\>:\<STOP\>:\<STEP\>*, all the elements *START*, *STOP* and *STEP* are
 optional. If *START* is omitted, *START* equals the *smallest* *available* element,
-if *STOP* is omitted, it equals the *largest* *available* element. If *STEP* is
-omitted, the step size equals *1*. *START* and *STOP* both have to be *positive* integers,
-*STEP* might also be a negative integer, which then would lead to reverse order of the specified
-elements. Step sizes other than *1* or *-1* are also allowed, except a step size of *0*.
+if *STOP* is omitted, *all* remaining *available* successive elements are included
+in the range.
+If *STEP* is omitted, the step size equals *1*. *START* and *STOP* both have to be
+*positive* integers, *STEP* might also be a negative integer, which then would lead
+to reverse order of the specified elements. Step sizes other than *1* or *-1* are also
+allowed. Obviously, a step size of *0* is not allowed.
 
 ## Missing data
 
