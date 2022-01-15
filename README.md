@@ -88,12 +88,12 @@ or by providing a file comprised of those expressions, one expression per line.
   ```
   # frames.txt
 
-  data_syn/1,
-  1/[2,4,5],
-  42/[3,4],
-  42:56/[2,3],
-  [2,3,4]/*,
-  */:56:-1,
+  data_syn/1
+  1/[2,4,5]
+  42/[3,4]
+  42:56/[2,3]
+  [2,3,4]/*
+  */:56:-1
   */*
   ```
 
