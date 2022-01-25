@@ -102,8 +102,6 @@ def test_frames_with_path_given_as_str(loader):
 
 
 def test_frames_with_data_specified(loader):
-    frames = list()
-
     # with a single frame
     check_descriptors(
         loader.frames(['data/2']),
@@ -358,3 +356,17 @@ def test_frames_with_negative_start_or_stop(loader):
 
     # frame selection with negative stop
     check_for_immediate_error(loader, ['1/:-1'], Exception)
+
+
+def test_frames_with_empty_expression_list(loader):
+    check_for_immediate_error(loader, [], ValueError)
+
+
+def test_frames_with_path_pointing_to_a_directory_instead_of_a_file(dataset, tmp_path_factory):
+    loader = YcbVideoLoader(dataset)
+    path_to_a_directory = tmp_path_factory.mktemp('not_a_file')
+    check_for_immediate_error(loader, path_to_a_directory, IOError)
+
+
+def test_frames_with_none_given_as_path(loader):
+    check_for_immediate_error(loader, None, TypeError)

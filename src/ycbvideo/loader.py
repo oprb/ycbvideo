@@ -210,12 +210,19 @@ class YcbVideoLoader:
         """
 
         if isinstance(frames, list):
+            if not frames:
+                raise ValueError('List is empty')
             frame_descriptors = self._get_descriptors(frames)
         elif isinstance(frames, (Path, str)):
             path = Path(frames)
 
             if not path.is_absolute():
                 path = self._path / path
+
+            if not path.exists():
+                raise IOError(f"Path does not exist: {path}")
+            elif not path.is_file():
+                raise IOError(f"Path is not a file: {path}")
 
             expressions = _load_selection_expressions_from_file(path)
             frame_descriptors = self._get_descriptors(expressions)
