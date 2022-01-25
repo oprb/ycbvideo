@@ -1,18 +1,5 @@
 from pathlib import Path
-from typing import Union, Tuple, Optional, List, Literal
-
-
-class RangeError(Exception):
-    """Base class for exceptions raised in range expansion"""
-    pass
-
-
-class MissingItemError(RangeError):
-    """Exception raised when an explicitly named item used as 'start' or 'stop' is missing"""
-    def __init__(self, item: str, usage: Literal['start', 'stop'], message: str):
-        self.item = item
-        self.usage = usage
-        self.message = message
+from typing import Union, Optional, Literal
 
 
 def validate_directory_path(path: Union[Path, str]) -> Path:
@@ -25,42 +12,30 @@ def validate_directory_path(path: Union[Path, str]) -> Path:
     return path
 
 
-def expand_range(item_range: Tuple[Optional[str], Optional[str], Optional[int]], items: List[str]) -> List[str]:
-    if not items:
-        raise RangeError("No items were given")
-    if item_range[2] == 0:
-        raise RangeError('Invalid range: Step size must not be 0')
+def check_kind(kind: str):
+    if kind not in ['sequence', 'frame']:
+        raise ValueError(f"kind has to be either 'sequence' or 'frame': {kind}")
 
-    # step defaults to 1
-    # step could be an int != 0 or None at this point
-    step = item_range[2] or 1
 
-    start = item_range[0]
-    stop = item_range[1]
+def normalize_element(element: str, kind: Literal['sequence', 'frame']) -> str:
+    check_kind(kind)
 
-    if start:
-        try:
-            start_index = items.index(start)
-        except ValueError as error:
-            raise MissingItemError(start, 'start', f"Invalid range: Start '{start}' not in {items}") from error
+    if not element.isdigit():
+        raise ValueError(f"element must be a digit: {element}")
+
+    if kind == 'sequence' and len(element) > 4:
+        raise ValueError(f"sequence element must be of length <= 4: {element}")
+    elif kind == 'frame' and len(element) > 6:
+        raise ValueError(f"frame element must be of length <= 6: {element}")
+
+    if kind == 'sequence':
+        return "{:04d}".format(int(element))
     else:
-        start_index = None
+        return "{:06d}".format(int(element))
 
-    if stop:
-        try:
-            stop_index = items.index(stop)
-        except ValueError as error:
-            raise MissingItemError(stop, 'stop', f"Invalid range: Stop '{stop}' not in {items}") from error
-    else:
-        stop_index = None
 
-    expansion = items[slice(start_index, stop_index, step)]
+def normalize_optional_element(element: Optional[str], kind: Literal['sequence', 'frame']) -> Optional[str]:
+    if not element:
+        return element
 
-    # an empty expansion is of no use and would be the result of
-    # start > stop with a step size > 0 or
-    # stop < start with a step size < 0 or
-    # start == stop
-    if not expansion:
-        raise RangeError(f"Invalid range: Expansion is empty")
-
-    return expansion
+    return normalize_element(element, kind)

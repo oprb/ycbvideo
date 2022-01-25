@@ -18,7 +18,7 @@ class Box(NamedTuple):
     coordinates: Tuple[float, float, float, float]
 
 
-class FrameDescriptor(NamedTuple):
+class Descriptor(NamedTuple):
     frame_sequence: str
     frame: str
 
@@ -28,7 +28,7 @@ class Frame(NamedTuple):
     depth: ndarray
     boxes: Optional[List[Box]]
     label: ndarray
-    description: FrameDescriptor
+    description: Descriptor
 
 
 class FrameSequence:
@@ -98,7 +98,7 @@ class FrameSequence:
             depth=imageio.imread(self._path / f"{index}-depth.png"),
             boxes=self._get_boxes(index) if self._sequence_name != 'data_syn' else None,
             label=imageio.imread(self._path / f"{index}-label.png"),
-            description=FrameDescriptor(self._path.name, index))
+            description=Descriptor(self._path.name, index))
 
     def _get_boxes(self, index: str) -> List[Box]:
         file = self._path / f"{index}-box.txt"

@@ -4,9 +4,23 @@ from pathlib import Path
 import random
 from typing import List, Iterable, Union, Iterator, Dict, Optional
 
-from . import datatypes
-from . import frameselection
-from . import utils
+from . import datatypes, parsing, selectors, utils
+
+
+def _load_selection_expressions_from_file(file: Union[Path, str]) -> List[str]:
+    file_path = Path(file)
+
+    if not file_path.exists():
+        raise IOError(f"File does not exist: {file_path}")
+
+    expressions = []
+    with open(file_path, 'r') as f:
+        for line_number, line in enumerate(f):
+            # skip empty lines and remove leading and trailing whitespace including 'newline'
+            if stripped_line := line.lstrip().rstrip():
+                expressions.append(stripped_line)
+
+    return expressions
 
 
 class YcbVideoLoader:
@@ -66,93 +80,46 @@ class YcbVideoLoader:
     def get_frame_sequences(self, indexes: Iterable[Union[int, str]]) -> List[datatypes.FrameSequence]:
         return [self.get_frame_sequence(index) for index in indexes]
 
-    def get_frame_descriptors(self, frame_selector: frameselection.FrameSelector) -> List[datatypes.FrameDescriptor]:
-        frame_descriptors = []
-
-        actual_frame_sequence_selection = None
-        actual_frame_selection = None
-
-        if frame_selector.frame_sequence_selection == '*':
-            actual_frame_sequence_selection = sorted(self._available_frame_sequences)
-        elif frame_selector.frame_sequence_selection == 'data':
-            actual_frame_sequence_selection = sorted((self.get_available_data_frame_sequences()))
-        elif sequence_range := frameselection.range_selection(frame_selector.frame_sequence_selection, 'sequence'):
-            try:
-                actual_frame_sequence_selection = utils.expand_range(
-                    sequence_range.as_tuple(),
-                    sorted(self.get_available_data_frame_sequences()))
-            except utils.MissingItemError as error:
-                raise IOError(
-                    f"Frame sequence specified in range as '{error.usage}' is not available: '{error.item}'") from error
-        else:
-            actual_frame_sequence_selection = \
-                [frameselection.normalize_sequence_selection_item(frame_sequence) for
-                 frame_sequence in frameselection.get_items(frame_selector.frame_sequence_selection)]
-            for index, frame_sequence in enumerate(actual_frame_sequence_selection):
-                if frame_sequence not in self._available_frame_sequences:
-                    raise IOError(
-                        f"""Frame Sequence is not available: {frame_sequence}
-                            (specified at index {index} in {frame_selector}""")
-
-        for frame_sequence in actual_frame_sequence_selection:
-            sequence = self.get_frame_sequence(frame_sequence)
-
-            available_frames = sorted(sequence.get_complete_frame_sets())
-
-            if frame_selector.frame_selection == '*':
-                frame_descriptors.extend(
-                    [datatypes.FrameDescriptor(frame_sequence, frame) for frame in available_frames])
-
-                continue
-            elif frame_range := frameselection.range_selection(frame_selector.frame_selection, 'frame'):
-                try:
-                    actual_frame_selection = utils.expand_range(frame_range.as_tuple(), available_frames)
-                except utils.MissingItemError as error:
-                    raise IOError(
-                        f"Frame specified in range as '{error.usage}' is not available: '{error.item}'") from error
-
-                frame_descriptors.extend(
-                    [datatypes.FrameDescriptor(frame_sequence, frame) for frame in actual_frame_selection])
-
-                continue
-            else:
-                actual_frame_selection = [frameselection.normalize_frame_selection_item(frame) for
-                                          frame in frameselection.get_items(frame_selector.frame_selection)]
-
-            for index, frame in enumerate(actual_frame_selection):
-                if frame not in available_frames:
-                    if frame in (incomplete_frame_sets := sequence.get_incomplete_frame_sets()):
-                        missing_files = incomplete_frame_sets[frame]
-
-                        raise IOError(
-                            f"""Files for frame are missing: {frame_sequence}/{frame}
-                                (specified at index {index} in {frame_selector}) Missing: {missing_files}""")
-                    else:
-                        raise IOError(
-                            f"""Frame is not available: {frame_sequence}/{frame}
-                                (specified at index {index} in {frame_selector}""")
-
-                frame_descriptors.append(datatypes.FrameDescriptor(frame_sequence, frame))
-
-        return frame_descriptors
-
-    def _get_frame(self, descriptor: datatypes.FrameDescriptor) -> datatypes.Frame:
+    def _get_frame(self, descriptor: datatypes.Descriptor) -> datatypes.Frame:
         return self.get_frame_sequence(descriptor.frame_sequence).get_frame(descriptor.frame)
 
-    def _get_descriptors_from_selections(self, selections: List[str]) -> List[datatypes.FrameDescriptor]:
-        selectors = frameselection.get_frame_selectors(selections)
+    def _get_descriptors(self, expressions: List[str]) -> List[datatypes.Descriptor]:
+        selectors = parsing.parse_selection_expressions(expressions)
 
-        return self._get_descriptors_from_selectors(selectors)
-
-    def _get_descriptors_from_selectors(
-            self,
-            selectors: Iterable[frameselection.FrameSelector]) -> List[datatypes.FrameDescriptor]:
-        frame_descriptors = []
-
+        descriptors = []
         for selector in selectors:
-            frame_descriptors.extend(self.get_frame_descriptors(selector))
+            descriptors.extend(self._create_descriptors_from_selector(selector))
 
-        return frame_descriptors
+        return descriptors
+
+    def _create_descriptors_from_selector(self, selector: selectors.Selector) -> List[datatypes.Descriptor]:
+        available_sequences = sorted(self.get_available_frame_sequences())
+
+        descriptors = []
+        try:
+            selected_sequences = selector.select_sequences(available_sequences)
+        except selectors.MissingElementError as error:
+            raise IOError(f"Frame sequence is not available: {error.element}")
+
+        for sequence in selected_sequences:
+            sequence_object = self.get_frame_sequence(sequence)
+            available_frames = sorted(sequence_object.get_complete_frame_sets())
+
+            try:
+                selected_frames = selector.select_frames(available_frames)
+            except selectors.MissingElementError as error:
+                frame = error.element
+                if frame in (incomplete_frame_sets := sequence_object.get_incomplete_frame_sets()):
+                    missing_files = incomplete_frame_sets[frame]
+
+                    raise IOError(f"Files for frame missing: {sequence}/{frame} misses {missing_files}")
+                else:
+                    raise IOError(f"Frame is not available: {sequence}/{frame}")
+
+            for frame in selected_frames:
+                descriptors.append(datatypes.Descriptor(sequence, frame))
+
+        return descriptors
 
     def frames(self, frames: Union[List[str], Union[Path, str]], shuffle: bool = False) -> Iterator[datatypes.Frame]:
         """
@@ -243,15 +210,15 @@ class YcbVideoLoader:
         """
 
         if isinstance(frames, list):
-            frame_descriptors = self._get_descriptors_from_selections(frames)
+            frame_descriptors = self._get_descriptors(frames)
         elif isinstance(frames, (Path, str)):
             path = Path(frames)
 
             if not path.is_absolute():
                 path = self._path / path
 
-            frame_selectors = frameselection.load_frame_selectors_from_file(path)
-            frame_descriptors = self._get_descriptors_from_selectors(frame_selectors)
+            expressions = _load_selection_expressions_from_file(path)
+            frame_descriptors = self._get_descriptors(expressions)
         else:
             raise TypeError('frames has to be of type list, pathlib.Path or str')
 

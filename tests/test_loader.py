@@ -189,7 +189,7 @@ def test_frames_with_missing_files(incomplete_dataset):
 
     # meta.mat files are not required and can be missing
     frame = next(loader.frames(['data_syn/2']))
-    assert frame.description == ycbvideo.datatypes.FrameDescriptor('data_syn', '000002')
+    assert frame.description == ycbvideo.datatypes.Descriptor('data_syn', '000002')
     assert frame.color is not None
     assert frame.depth is not None
     assert frame.label is not None
