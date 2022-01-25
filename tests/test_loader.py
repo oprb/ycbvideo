@@ -1,3 +1,4 @@
+import random
 from pathlib import Path
 import shutil
 from typing import Iterator, Union, List, Type, Tuple
@@ -370,3 +371,24 @@ def test_frames_with_path_pointing_to_a_directory_instead_of_a_file(dataset, tmp
 
 def test_frames_with_none_given_as_path(loader):
     check_for_immediate_error(loader, None, TypeError)
+
+
+def test_frames_are_shuffled_as_set_by_seed(loader):
+    random.seed(42)
+    first_run = [frame.description for frame in loader.frames(['*/*'], shuffle=True)]
+
+    random.seed(42)
+    second_run =[frame.description for frame in loader.frames(['*/*'], shuffle=True)]
+
+    assert first_run == second_run
+
+
+def test_frames_are_shuffled_the_same_when_state_is_reset(loader):
+    random.seed(42)
+    state = random.getstate()
+    first_run = [frame.description for frame in loader.frames(['*/*'], shuffle=True)]
+
+    random.setstate(state)
+    second_run = [frame.description for frame in loader.frames(['*/*'], shuffle=True)]
+
+    assert first_run == second_run
