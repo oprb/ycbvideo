@@ -1,7 +1,7 @@
 import random
 from pathlib import Path
 import shutil
-from typing import Iterator, Union, List, Type, Tuple
+from typing import Union, List, Type, Tuple, Iterable
 
 import pytest
 
@@ -14,7 +14,7 @@ def loader(dataset):
     return YcbVideoLoader(dataset)
 
 
-def check_frame_items(frames: Iterator[ycbvideo.datatypes.Frame]):
+def check_frame_items(frames: Iterable[ycbvideo.datatypes.Frame]):
     frame_items = [frame for frame in frames]
 
     # expected are 5 frames from sequence 0001, three from sequence 0002 and one frame from data_syn
@@ -31,10 +31,8 @@ def check_frame_items(frames: Iterator[ycbvideo.datatypes.Frame]):
         ('0002', '000005'),
         ('data_syn', '000001')
     ]
-    for item in zip(frame_items, expected_descriptors):
-        frame_item, expected_descriptor = item
 
-        assert frame_item.description == expected_descriptor
+    check_descriptors(frames, expected_descriptors)
 
     for index, frame in enumerate(frame_items):
         assert frame.color is not None
@@ -44,7 +42,7 @@ def check_frame_items(frames: Iterator[ycbvideo.datatypes.Frame]):
         assert frame.boxes is not None if frame.description.frame_sequence != 'data_syn' else frame.boxes is None
 
 
-def check_descriptors(frames: Iterator[ycbvideo.datatypes.Frame], expected_descriptions: List[Tuple[str, str]]):
+def check_descriptors(frames: Iterable[ycbvideo.datatypes.Frame], expected_descriptions: List[Tuple[str, str]]):
     frame_items = list(frames)
 
     for frame, expected_description in zip(frame_items, expected_descriptions):
@@ -55,13 +53,37 @@ def check_for_immediate_error(loader: YcbVideoLoader,
                               selection: Union[List[str], Union[Path, str]],
                               error: Type[Exception]):
     with pytest.raises(error):
-        next(loader.frames(selection))
+        loader.frames(selection)
+
+
+def test_frames_supports_len_builtin(loader):
+    frames = loader.frames(['1/*'])
+
+    assert hasattr(frames, '__len__')
+    # test sequence 0001 contains 5 frames
+    assert len(frames) == 5
+
+
+def test_frames_supports_iter_builtin(loader):
+    frames = loader.frames(['1/*'])
+
+    assert hasattr(frames, '__iter__')
+
+    for frame, expected_descriptor in zip(
+            iter(frames),
+            [('0001', '000001'),
+             ('0001', '000002'),
+             ('0001', '000003'),
+             ('0001', '000004'),
+             ('0001', '000005')]):
+        assert isinstance(frame, ycbvideo.datatypes.Frame)
+        assert frame.description == expected_descriptor
 
 
 def test_frames_with_sequence_0000(loader):
     # make sure that there is no confusion that frame sequences start with index '0000'
     # but frames with index '000001'
-    frame = next(loader.frames(['0/1']))
+    frame = next(iter(loader.frames(['0/1'])))
 
     assert frame.description == ('0000', '000001')
 
@@ -187,7 +209,7 @@ def test_frames_with_missing_files(incomplete_dataset):
     check_for_immediate_error(loader, ['2/1', '2/2'], IOError)
 
     # meta.mat files are not required and can be missing
-    frame = next(loader.frames(['data_syn/2']))
+    frame = next(iter(loader.frames(['data_syn/2'])))
     assert frame.description == ycbvideo.datatypes.Descriptor('data_syn', '000002')
     assert frame.color is not None
     assert frame.depth is not None
@@ -268,8 +290,7 @@ def test_frames_with_valid_range_expressions(loader):
         ('data_syn', '000001'),
     ]
 
-    for frame, expected_descriptor in zip(frames, expected_descriptors):
-        assert frame.description == expected_descriptor
+    check_descriptors(frames, expected_descriptors)
 
 
 def test_frames_with_range_expressions_and_missing_frames(incomplete_dataset):
@@ -288,8 +309,7 @@ def test_frames_with_range_expressions_and_missing_frames(incomplete_dataset):
         ('0001', '000005'),
     ]
 
-    for frame, expected_descriptor in zip(frames, expected_descriptors):
-        assert frame.description == expected_descriptor
+    check_descriptors(frames, expected_descriptors)
 
 
 def test_frames_with_missing_frames_specified_as_start_or_stop_in_range_expression(incomplete_dataset):

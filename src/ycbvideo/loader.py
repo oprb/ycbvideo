@@ -2,7 +2,7 @@ import functools
 import os
 from pathlib import Path
 import random
-from typing import List, Iterable, Union, Iterator, Dict, Optional
+from typing import List, Iterable, Union, Dict, Optional, Sequence
 
 from . import datatypes, parsing, selectors, utils
 
@@ -80,9 +80,6 @@ class YcbVideoLoader:
     def get_frame_sequences(self, indexes: Iterable[Union[int, str]]) -> List[datatypes.FrameSequence]:
         return [self.get_frame_sequence(index) for index in indexes]
 
-    def _get_frame(self, descriptor: datatypes.Descriptor) -> datatypes.Frame:
-        return self.get_frame_sequence(descriptor.frame_sequence).get_frame(descriptor.frame)
-
     def _get_descriptors(self, expressions: List[str]) -> List[datatypes.Descriptor]:
         selectors = parsing.parse_selection_expressions(expressions)
 
@@ -121,9 +118,9 @@ class YcbVideoLoader:
 
         return descriptors
 
-    def frames(self, frames: Union[List[str], Union[Path, str]], shuffle: bool = False) -> Iterator[datatypes.Frame]:
+    def frames(self, frames: Union[List[str], Union[Path, str]], shuffle: bool = False) -> Iterable[datatypes.Frame]:
         """
-        Return an iterator for the specified frames.
+        Return an iterable object for the specified frames.
 
         To be memory-friendly, the specified frames will be created
         just-in-time. The frames can be specified as either a list of
@@ -232,5 +229,22 @@ class YcbVideoLoader:
         if shuffle:
             random.shuffle(frame_descriptors)
 
-        for descriptor in frame_descriptors:
+        return _FrameAccessor(self, frame_descriptors)
+
+
+class _FrameAccessor:
+    def __init__(self, loader: YcbVideoLoader, descriptors: Sequence[datatypes.Descriptor]):
+        self._loader = loader
+        self._descriptors = descriptors
+
+    def _get_frame(self, descriptor: datatypes.Descriptor) -> datatypes.Frame:
+        sequence_object = self._loader.get_frame_sequence(descriptor.frame_sequence)
+
+        return sequence_object.get_frame(descriptor.frame)
+
+    def __iter__(self):
+        for descriptor in self._descriptors:
             yield self._get_frame(descriptor)
+
+    def __len__(self):
+        return len(self._descriptors)
