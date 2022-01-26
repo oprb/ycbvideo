@@ -80,6 +80,29 @@ def test_frames_supports_iter_builtin(loader):
         assert frame.description == expected_descriptor
 
 
+def test_frames_supports_get_item_builtin_given_ints(loader):
+    frames = loader.frames(['1/*'])
+
+    assert hasattr(frames, '__getitem__')
+
+    with pytest.raises(TypeError):
+        # providing an on-the-fly created non-int object
+        frames[type('not_an_int', (), {})]
+
+    with pytest.raises(ValueError):
+        # test sequence 0001 contains only 5 frames, 42 is sure out of range
+        frames[42]
+
+    for i, expected_descriptor in enumerate([('0001', '000001'),
+                                             ('0001', '000002'),
+                                             ('0001', '000003'),
+                                             ('0001', '000004'),
+                                             ('0001', '000005')]):
+        frame = frames[i]
+        assert isinstance(frame, ycbvideo.datatypes.Frame)
+        assert frame.description == expected_descriptor
+
+
 def test_frames_with_sequence_0000(loader):
     # make sure that there is no confusion that frame sequences start with index '0000'
     # but frames with index '000001'

@@ -248,3 +248,13 @@ class _FrameAccessor:
 
     def __len__(self):
         return len(self._descriptors)
+
+    @functools.lru_cache()
+    def __getitem__(self, index: int):
+        if isinstance(index, int):
+            if 0 <= index < len(self):
+                return self._get_frame(self._descriptors[index])
+
+            raise ValueError('index out of range')
+
+        raise TypeError('item must be an int')
