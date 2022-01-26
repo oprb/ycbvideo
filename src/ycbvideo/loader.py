@@ -169,10 +169,10 @@ class YcbVideoLoader:
         If `shuffle` is set to 'False', the frames will be returned
         in exactly the order as specified by the order of selection
         expressions and the order of the elements in those. Otherwise,
-        the frames get shuffled. Because random.shuffle() is used to
-        shuffle the frames, by setting a seed with random.seed(), the
-        frames will be shuffled the same way each time this method is
-        called.
+        the frames get shuffled. Since random.shuffle() is used to
+        shuffle the frames, by setting a seed with random.seed() or
+        setting a state with random.setstate() a certain shuffle order
+        can be defined.
 
         For each specified frame it is made sure that the corresponding
         files exists, even if the frame is only eventually created.
