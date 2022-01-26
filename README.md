@@ -73,16 +73,15 @@ or by providing a file comprised of those expressions, one expression per line.
 * Via a list
 
   ```python
-  for frame in loader.frames([
-    'data_syn/1',
-    '1/[2,4,5]',
-    '42/[3,4]',
-    '42:56/[2,3]',
-    '[2,3,4]/*',
-    '*/:56:-1',
-    '*/*']):
-    # do something with the frame
+  frames = loader.frames(['data_syn/1',
+                          '1/[2,4,5]',
+                          '42/[3,4]',
+                          '42:56/[2,3]',
+                          '[2,3,4]/*',
+                          '*/:56:-1',
+                          '*/*'])
   ```
+
 * Via a file
 
   ```
@@ -98,12 +97,46 @@ or by providing a file comprised of those expressions, one expression per line.
   ```
 
   ```python
-  for frame in loader.frames('/path/to/frames.txt'):
-      # do something with the frame
+  frames = loader.frames('/path/to/frames.txt')
   ```
 
   If you provide a relative path, it is assumed that the file is located inside the dataset directory,
   e.g. `imagesets/train.txt`.
+
+The object returned by `loader.frames()` shares some behaviour with the Python
+`List` type, specifically supporting iteration, the `len()` Python
+builtin and index-based element access:
+
+* Iterate over all elements:
+
+  ```python
+  # create either an iterator using iter()
+  iterator = iter(loader.frames(...))
+  
+  # or use a for loop
+  for frame in loader.frames(...):
+      # do something with the frame
+  ```
+
+* Determine the number of frames:
+
+  ```python
+  frames = loader.frames(...)
+  
+  len(frames)
+  ```
+
+* Access the element at a specific index:
+
+  ```python
+  frames = loader.frames(...)
+  
+  frame = frames[42]
+  ```
+
+Keep in mind that the returned object is *not* really a list and it's functional
+dependent from the loader, from which it was returned, so don't delete the loader or
+modify its internal state afterwards.
 
 If you want the frames to be shuffled for e.g. training in machine learning, just set the corresponding
 keyword argument to `True`. Optionally, you can set a *seed* to get the same shuffling result for each run:
@@ -112,8 +145,7 @@ keyword argument to `True`. Optionally, you can set a *seed* to get the same shu
 # setting the seed
 random.seed(42)
 
-for frame in loader.frames('imagesets/train.txt', shuffle=True):
-    # do something with it
+loader.frames(frames=..., shuffle=True)
 ```
 
 ## Expressions in detail
