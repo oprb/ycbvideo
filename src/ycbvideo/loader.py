@@ -191,10 +191,13 @@ class YcbVideoLoader:
         shuffle : bool, optional
             If True, the selected frames get shuffled
 
-        Yields
+        Returns
         ------
-        Frame
-            A frame specified by frames
+        Iterable[Frame]
+            An iterable allowing access to the frame objects with
+            additional support for the builtin len(iterable) and
+            for accessing single frame objects from it by specifying
+            an int index e.g. iterable[42]
         """
 
         if isinstance(frames, list):
