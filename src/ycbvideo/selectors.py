@@ -15,40 +15,40 @@ class ElementSelector(ABC):
 
 class SingleElementSelector(ElementSelector):
     def __init__(self, expression: str, element: str):
-        self.expression = expression
-        self.element_to_select = element
+        self._expression = expression
+        self._element_to_select = element
 
     def select(self, elements: List[str]) -> List[str]:
         ElementSelector.check_elements_to_select_from(elements)
 
-        if self.element_to_select not in elements:
+        if self._element_to_select not in elements:
             raise MissingElementError(
-                message=f"Single element missing: {self.expression}",
-                element=self.element_to_select,
+                message=f"Single element missing: {self._expression}",
+                element=self._element_to_select,
                 elements=elements)
 
-        return [self.element_to_select]
+        return [self._element_to_select]
 
 
 class ListSelector(ElementSelector):
     def __init__(self, expression: str, elements: List[str]):
-        self.expression = expression
-        self.elements_to_select = elements
+        self._expression = expression
+        self._elements_to_select = elements
 
     def select(self, elements: List[str]) -> List[str]:
         ElementSelector.check_elements_to_select_from(elements)
 
-        for index, element in enumerate(self.elements_to_select):
+        for index, element in enumerate(self._elements_to_select):
             if element not in elements:
                 raise MissingElementError(
                     message=f"List element missing: {self.get_list_expression_element(index)} at index {index}",
                     element=element,
                     elements=elements)
 
-        return self.elements_to_select
+        return self._elements_to_select
 
     def get_list_expression_element(self, index: int) -> str:
-        return self.expression.lstrip('[').rstrip(']').split(',')[index]
+        return self._expression.lstrip('[').rstrip(']').split(',')[index]
 
 
 class StarSelector(ElementSelector):
@@ -81,41 +81,41 @@ class DataSynSelector(ElementSelector):
 
 class RangeSelector(ElementSelector):
     def __init__(self, expression: str, start: Optional[str], stop: Optional[str], step: int = 1):
-        self.expression = expression
+        self._expression = expression
 
         self.check_range_elements(start, stop, step)
-        self.start = start
-        self.stop = stop
-        self.step = step
+        self._start = start
+        self._stop = stop
+        self._step = step
 
     def select(self, elements: List[str]) -> List[str]:
         ElementSelector.check_elements_to_select_from(elements)
 
-        if self.start:
+        if self._start:
             try:
-                start_index = elements.index(self.start)
+                start_index = elements.index(self._start)
             except ValueError as error:
                 raise MissingElementError(
-                    f"Range start element missing: {self.expression}", self.start, elements) from error
+                    f"Range start element missing: {self._expression}", self._start, elements) from error
         else:
             start_index = None
 
-        if self.stop:
+        if self._stop:
             try:
-                stop_index = elements.index(self.stop)
+                stop_index = elements.index(self._stop)
             except ValueError as error:
-                raise MissingElementError(f"Range stop element missing: {self.stop}", self.stop, elements) from error
+                raise MissingElementError(f"Range stop element missing: {self._stop}", self._stop, elements) from error
         else:
             stop_index = None
 
-        expansion = elements[slice(start_index, stop_index, self.step)]
+        expansion = elements[slice(start_index, stop_index, self._step)]
 
         # an empty expansion is of no use and would be the result of
         # start == stop
         # start = None, stop == first element and step size > 1
         # start = last element, stop == last element and step size < -1
         if not expansion:
-            raise EmptySelectionError(f"No elements selected: {self.expression}", self.expression, elements)
+            raise EmptySelectionError(f"No elements selected: {self._expression}", self._expression, elements)
 
         return expansion
 
@@ -136,23 +136,23 @@ class RangeSelector(ElementSelector):
 
         if start and stop:
             if step > 0 and int(start) > int(stop):
-                raise ValueError(f"step > 0 requires start < stop: {self.expression}")
+                raise ValueError(f"step > 0 requires start < stop: {self._expression}")
 
             if step < 0 and int(start) < int(stop):
-                raise ValueError(f"step < 0 requires start > stop: {self.expression}")
+                raise ValueError(f"step < 0 requires start > stop: {self._expression}")
 
 
 class Selector:
     def __init__(self, expression: str, sequence_selector: ElementSelector, frame_selector: ElementSelector):
-        self.expression = expression
-        self.sequence_selector = sequence_selector
-        self.frame_selector = frame_selector
+        self._expression = expression
+        self._sequence_selector = sequence_selector
+        self._frame_selector = frame_selector
 
     def select_sequences(self, sequences: List[str]) -> List[str]:
-        return self.sequence_selector.select(sequences)
+        return self._sequence_selector.select(sequences)
 
     def select_frames(self, frames: List[str]) -> List[str]:
-        return self.frame_selector.select(frames)
+        return self._frame_selector.select(frames)
 
 
 class SelectionError(Exception):
