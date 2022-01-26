@@ -40,36 +40,36 @@ def select_and_compare(
 
 @pytest.mark.parametrize('kind', ['sequence', 'frame'])
 def test_single_element_select(kind):
-    _format = get_formatter(kind)
-    elements = _format(ELEMENTS)
+    format_ = get_formatter(kind)
+    elements = format_(ELEMENTS)
 
     # first element in elements
     select_and_compare(
-        SingleElementSelector('40', _format(40)),
+        SingleElementSelector('40', format_(40)),
         given_elements=elements,
-        expected_selection=_format([40])
+        expected_selection=format_([40])
     )
 
     # element in the middle of elements
     select_and_compare(
-        SingleElementSelector('47', _format(47)),
+        SingleElementSelector('47', format_(47)),
         given_elements=elements,
-        expected_selection=_format([47])
+        expected_selection=format_([47])
     )
 
     # last element in elements
     select_and_compare(
-        SingleElementSelector('56', _format(56)),
+        SingleElementSelector('56', format_(56)),
         given_elements=elements,
-        expected_selection=_format([56])
+        expected_selection=format_([56])
     )
 
 
 @pytest.mark.parametrize('kind', ['sequence', 'frame'])
 def test_single_element_select_with_missing_element(kind):
-    _format = get_formatter(kind)
-    element = _format(13)
-    elements = _format(ELEMENTS)
+    format_ = get_formatter(kind)
+    element = format_(13)
+    elements = format_(ELEMENTS)
 
     with pytest.raises(MissingElementError) as exception_info:
         SingleElementSelector('13', element).select(elements)
@@ -81,9 +81,9 @@ def test_single_element_select_with_missing_element(kind):
 
 @pytest.mark.parametrize('kind', ['sequence', 'frame'])
 def test_list_select_with_multiple_elements(kind):
-    _format = get_formatter(kind)
-    elements_to_select = _format([40, 47, 56])
-    elements = _format(ELEMENTS)
+    format_ = get_formatter(kind)
+    elements_to_select = format_([40, 47, 56])
+    elements = format_(ELEMENTS)
 
     select_and_compare(
         ListSelector('[40,47,56]', elements_to_select),
@@ -94,34 +94,34 @@ def test_list_select_with_multiple_elements(kind):
 
 @pytest.mark.parametrize('kind', ['sequence', 'frame'])
 def test_list_select_with_single_element(kind):
-    _format = get_formatter(kind)
-    elements = _format(ELEMENTS)
+    format_ = get_formatter(kind)
+    elements = format_(ELEMENTS)
 
     select_and_compare(
-        ListSelector('[42]', _format([42])),
+        ListSelector('[42]', format_([42])),
         given_elements=elements,
-        expected_selection=_format([42])
+        expected_selection=format_([42])
     )
 
 
 @pytest.mark.parametrize('kind', ['sequence', 'frame'])
 def test_list_select_with_missing_element(kind):
-    _format = get_formatter(kind)
-    elements = _format(ELEMENTS)
+    format_ = get_formatter(kind)
+    elements = format_(ELEMENTS)
 
     # element 13 is missing
     with pytest.raises(MissingElementError) as exception_info:
-        ListSelector('[42,13,47]', _format([42, 13, 47])).select(elements)
+        ListSelector('[42,13,47]', format_([42, 13, 47])).select(elements)
 
     error = exception_info.value
-    assert error.element == _format(13)
+    assert error.element == format_(13)
     assert error.elements == elements
 
 
 @pytest.mark.parametrize('kind', ['sequence', 'frame'])
 def test_star_select(kind):
-    _format = get_formatter(kind)
-    elements = _format(ELEMENTS)
+    format_ = get_formatter(kind)
+    elements = format_(ELEMENTS)
 
     select_and_compare(
         StarSelector(),
@@ -165,137 +165,137 @@ def test_data_syn_select_with_data_syn_missing():
 
 @pytest.mark.parametrize('kind', ['sequence', 'frame'])
 def test_range_select_with_positive_step_size(kind):
-    _format = get_formatter(kind)
-    elements = _format(ELEMENTS)
+    format_ = get_formatter(kind)
+    elements = format_(ELEMENTS)
 
     # start given
     select_and_compare(
-        RangeSelector('42:', _format(42), None),
+        RangeSelector('42:', format_(42), None),
         given_elements=elements,
-        expected_selection=_format([42, 43, 44, 47, 55, 56]))
+        expected_selection=format_([42, 43, 44, 47, 55, 56]))
 
     # start and stop given
     select_and_compare(
-        RangeSelector('42:55', _format(42), _format(55)),
+        RangeSelector('42:55', format_(42), format_(55)),
         given_elements=elements,
-        expected_selection=_format([42, 43, 44, 47]))
+        expected_selection=format_([42, 43, 44, 47]))
 
     # start and step given
     select_and_compare(
-        RangeSelector('42::2', _format(42), None, 2),
+        RangeSelector('42::2', format_(42), None, 2),
         given_elements=elements,
-        expected_selection=_format([42, 44, 55])
+        expected_selection=format_([42, 44, 55])
     )
 
     # start, stop and step given
     select_and_compare(
-        RangeSelector('42:55:2', _format(42), _format(55), 2),
+        RangeSelector('42:55:2', format_(42), format_(55), 2),
         given_elements=elements,
-        expected_selection=_format([42, 44])
+        expected_selection=format_([42, 44])
     )
 
     # stop given
     select_and_compare(
-        RangeSelector(':55', None, _format(55)),
+        RangeSelector(':55', None, format_(55)),
         given_elements=elements,
-        expected_selection=_format([40, 41, 42, 43, 44, 47])
+        expected_selection=format_([40, 41, 42, 43, 44, 47])
     )
 
     # stop and step given
     select_and_compare(
-        RangeSelector(':55:2', None, _format(55), 2),
+        RangeSelector(':55:2', None, format_(55), 2),
         given_elements=elements,
-        expected_selection=_format([40, 42, 44])
+        expected_selection=format_([40, 42, 44])
     )
 
     # step given
     select_and_compare(
         RangeSelector('::2', None, None, 2),
         given_elements=elements,
-        expected_selection=_format([40, 42, 44, 55])
+        expected_selection=format_([40, 42, 44, 55])
     )
 
     # start equals first item
     select_and_compare(
-        RangeSelector('40:', _format(40), None),
+        RangeSelector('40:', format_(40), None),
         given_elements=elements,
-        expected_selection=_format([40, 41, 42, 43, 44, 47, 55, 56])
+        expected_selection=format_([40, 41, 42, 43, 44, 47, 55, 56])
     )
 
     # stop equals last item
     select_and_compare(
-        RangeSelector(':56', None, _format(56)),
+        RangeSelector(':56', None, format_(56)),
         given_elements=elements,
-        expected_selection=_format([40, 41, 42, 43, 44, 47, 55])
+        expected_selection=format_([40, 41, 42, 43, 44, 47, 55])
     )
 
     # stop is start's successor
     select_and_compare(
-        RangeSelector('42:43', _format(42), _format(43)),
+        RangeSelector('42:43', format_(42), format_(43)),
         given_elements=elements,
-        expected_selection=[_format(42)]
+        expected_selection=[format_(42)]
     )
 
 
 @pytest.mark.parametrize('kind', ['frame', 'sequence'])
 def test_range_select_with_negative_step_size(kind):
-    _format = get_formatter(kind)
-    elements = _format(ELEMENTS)
+    format_ = get_formatter(kind)
+    elements = format_(ELEMENTS)
 
     # start given
     select_and_compare(
-        RangeSelector('55::-1', _format(55), None, -1),
+        RangeSelector('55::-1', format_(55), None, -1),
         given_elements=elements,
-        expected_selection=_format([55, 47, 44, 43, 42, 41, 40])
+        expected_selection=format_([55, 47, 44, 43, 42, 41, 40])
     )
 
     # start and stop given
     select_and_compare(
-        RangeSelector('55:42:-1', _format(55), _format(42), -1),
+        RangeSelector('55:42:-1', format_(55), format_(42), -1),
         given_elements=elements,
-        expected_selection=_format([55, 47, 44, 43])
+        expected_selection=format_([55, 47, 44, 43])
     )
 
     # greater negative step size
     select_and_compare(
-        RangeSelector('55:42:-2', _format(55), _format(42), -2),
+        RangeSelector('55:42:-2', format_(55), format_(42), -2),
         given_elements=elements,
-        expected_selection=_format([55, 44])
+        expected_selection=format_([55, 44])
     )
 
     # stop given
     select_and_compare(
-        RangeSelector(':42:-1', None, _format(42), -1),
+        RangeSelector(':42:-1', None, format_(42), -1),
         given_elements=elements,
-        expected_selection=_format([56, 55, 47, 44, 43])
+        expected_selection=format_([56, 55, 47, 44, 43])
     )
 
     # step given
     select_and_compare(
         RangeSelector('::-1', None, None, -1),
         given_elements=elements,
-        expected_selection=_format([56, 55, 47, 44, 43, 42, 41, 40])
+        expected_selection=format_([56, 55, 47, 44, 43, 42, 41, 40])
     )
 
     # start equals last item
     select_and_compare(
-        RangeSelector('56::-1', _format(56), None, -1),
+        RangeSelector('56::-1', format_(56), None, -1),
         given_elements=elements,
-        expected_selection=_format([56, 55, 47, 44, 43, 42, 41, 40])
+        expected_selection=format_([56, 55, 47, 44, 43, 42, 41, 40])
     )
 
     # stop equals first item
     select_and_compare(
-        RangeSelector(':40:-1', None, _format(40), -1),
+        RangeSelector(':40:-1', None, format_(40), -1),
         given_elements=elements,
-        expected_selection=_format([56, 55, 47, 44, 43, 42, 41])
+        expected_selection=format_([56, 55, 47, 44, 43, 42, 41])
     )
 
     # stop is start's predecessor
     select_and_compare(
-        RangeSelector('42:41:-1', _format(42), _format(41), -1),
+        RangeSelector('42:41:-1', format_(42), format_(41), -1),
         given_elements=elements,
-        expected_selection=_format([42])
+        expected_selection=format_([42])
     )
 
 
@@ -306,70 +306,70 @@ def test_create_range_with_step_size_of_zero():
 
 @pytest.mark.parametrize('kind', ['sequence', 'frame'])
 def test_create_range_with_invalid_borders(kind):
-    _format = get_formatter(kind)
+    format_ = get_formatter(kind)
 
     # start is greater than stop
     with pytest.raises(ValueError):
-        RangeSelector('55:42', _format(55), _format(42))
+        RangeSelector('55:42', format_(55), format_(42))
 
     # stop is greater than start
     with pytest.raises(ValueError):
-        RangeSelector('42:55:-1', _format(42), _format(55), -1)
+        RangeSelector('42:55:-1', format_(42), format_(55), -1)
 
 
 @pytest.mark.parametrize('kind', ['sequence', 'frame'])
 def test_range_select_when_stop_equals_start(kind):
-    _format = get_formatter(kind)
+    format_ = get_formatter(kind)
 
     with pytest.raises(EmptySelectionError):
-        RangeSelector('42:42', _format(42), _format(42)).select(_format(ELEMENTS))
+        RangeSelector('42:42', format_(42), format_(42)).select(format_(ELEMENTS))
 
 
 @pytest.mark.parametrize('kind', ['sequence', 'frame'])
 def test_range_select_when_stop_equals_first_element(kind):
-    _format = get_formatter(kind)
+    format_ = get_formatter(kind)
 
     with pytest.raises(EmptySelectionError):
-        RangeSelector(':40', None, _format(40)).select(_format(ELEMENTS))
+        RangeSelector(':40', None, format_(40)).select(format_(ELEMENTS))
 
 
 @pytest.mark.parametrize('kind', ['sequence', 'frame'])
 def test_range_select_when_stop_equals_last_element_and_with_negative_step_size(kind):
-    _format = get_formatter(kind)
+    format_ = get_formatter(kind)
 
     with pytest.raises(EmptySelectionError):
-        RangeSelector(':56:-1', None, _format(56), -1).select(_format(ELEMENTS))
+        RangeSelector(':56:-1', None, format_(56), -1).select(format_(ELEMENTS))
 
 
 @pytest.mark.parametrize('kind', ['sequence', 'frame'])
 def test_range_select_with_missing_items(kind):
-    _format = get_formatter(kind)
-    elements = _format(ELEMENTS)
+    format_ = get_formatter(kind)
+    elements = format_(ELEMENTS)
 
     # item specified as start is missing in items
     with pytest.raises(MissingElementError) as exception_info:
-        RangeSelector('39:', _format(39), None).select(elements)
+        RangeSelector('39:', format_(39), None).select(elements)
 
     error = exception_info.value
-    assert error.element == _format(39)
+    assert error.element == format_(39)
     assert error.elements == elements
 
     # item specified as stop is missing in items
     with pytest.raises(MissingElementError) as exception_info:
-        RangeSelector(':57', None, _format(57)).select(elements)
+        RangeSelector(':57', None, format_(57)).select(elements)
 
     error = exception_info.value
-    assert error.element == _format(57)
+    assert error.element == format_(57)
     assert error.elements == elements
 
 
 @pytest.mark.parametrize('kind', ['sequence', 'frame'])
 def test_select_with_no_elements(kind):
-    _format = get_formatter(kind)
+    format_ = get_formatter(kind)
 
     selectors = [
-        SingleElementSelector('42', _format(42)),
-        ListSelector('[42]', _format([42])),
+        SingleElementSelector('42', format_(42)),
+        ListSelector('[42]', format_([42])),
         StarSelector(),
         DataSelector(),
         DataSynSelector(),
