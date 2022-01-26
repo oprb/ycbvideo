@@ -406,9 +406,12 @@ def test_frames_with_empty_expression_list(loader):
     check_for_immediate_error(loader, [], ValueError)
 
 
-def test_frames_with_path_pointing_to_a_directory_instead_of_a_file(dataset, tmp_path_factory):
+def test_frames_with_path_pointing_to_a_directory_instead_of_a_file(dataset, tmp_path):
     loader = YcbVideoLoader(dataset)
-    path_to_a_directory = tmp_path_factory.mktemp('not_a_file')
+
+    path_to_a_directory = tmp_path / 'not_a_file'
+    path_to_a_directory.mkdir()
+
     check_for_immediate_error(loader, path_to_a_directory, IOError)
 
 
