@@ -24,17 +24,11 @@ def _load_selection_expressions_from_file(file: Union[Path, str]) -> List[str]:
 
 
 class YcbVideoLoader:
-    """
-
-    """
     def __init__(self, path: Union[Path, str]):
         self._path = utils.validate_directory_path(path)
         self._data_directory = self._path / 'data'
         self._data_syn_directory = self._path / 'data_syn'
         self._available_frame_sequences = self.get_available_frame_sequences()
-    """
-        path: Path to the YCB-Video dataset root directory
-    """
 
     def frames_info(self) -> Dict[str, Dict[str, Optional[List[str]]]]:
         available_sequences = sorted(self.get_available_frame_sequences())
