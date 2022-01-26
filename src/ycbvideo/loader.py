@@ -77,9 +77,6 @@ class YcbVideoLoader:
 
         return datatypes.FrameSequence(path)
 
-    def get_frame_sequences(self, indexes: Iterable[Union[int, str]]) -> List[datatypes.FrameSequence]:
-        return [self.get_frame_sequence(index) for index in indexes]
-
     def _get_descriptors(self, expressions: List[str]) -> List[datatypes.Descriptor]:
         selectors = parsing.parse_selection_expressions(expressions)
 
