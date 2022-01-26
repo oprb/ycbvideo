@@ -6,12 +6,12 @@ from typing import Union, List, Type, Tuple, Iterable
 import pytest
 
 import ycbvideo.datatypes
-from ycbvideo.loader import YcbVideoLoader
+from ycbvideo.loader import Loader
 
 
 @pytest.fixture()
 def loader(dataset):
-    return YcbVideoLoader(dataset)
+    return Loader(dataset)
 
 
 def check_frame_items(frames: Iterable[ycbvideo.datatypes.Frame]):
@@ -49,7 +49,7 @@ def check_descriptors(frames: Iterable[ycbvideo.datatypes.Frame], expected_descr
         assert frame.description == expected_description
 
 
-def check_for_immediate_error(loader: YcbVideoLoader,
+def check_for_immediate_error(loader: Loader,
                               selection: Union[List[str], Union[Path, str]],
                               error: Type[Exception]):
     with pytest.raises(error):
@@ -135,7 +135,7 @@ def test_select_frames_from_file_with_relative_path(dataset):
     (dataset / image_sets).mkdir()
 
     shutil.copy('data/tests/selections.txt', dataset / image_sets / file)
-    loader = YcbVideoLoader(dataset)
+    loader = Loader(dataset)
 
     check_frame_items(loader.frames(f"{image_sets}/{file}"))
 
@@ -210,7 +210,7 @@ def test_frames_with_missing_files(incomplete_dataset):
         'data_syn': {'000002-meta.mat'}
     })
 
-    loader = YcbVideoLoader(dataset)
+    loader = Loader(dataset)
 
     # make sure an error is raised already when the first frame
     # is requested from the iterator even if the expression
@@ -260,7 +260,7 @@ def test_frames_info_with_missing_frames(incomplete_dataset):
         'data_syn': {'000002-meta.mat', '000004-label.png'}
     })
 
-    loader = YcbVideoLoader(dataset)
+    loader = Loader(dataset)
     info = loader.frames_info()
     expected_info = {
         '0000': {
@@ -321,7 +321,7 @@ def test_frames_with_range_expressions_and_missing_frames(incomplete_dataset):
         'data/0001': {'000003-color.png', '000003-depth.png', '000003-label.png', '000003-box.txt'}
     })
 
-    frames = list(YcbVideoLoader(dataset).frames(['1/:']))
+    frames = list(Loader(dataset).frames(['1/:']))
 
     assert len(frames) == 4
 
@@ -340,7 +340,7 @@ def test_frames_with_missing_frames_specified_as_start_or_stop_in_range_expressi
         'data/0001': {'000003-color.png', '000003-depth.png', '000003-label.png', '000003-box.txt'}
     })
 
-    loader = YcbVideoLoader(dataset)
+    loader = Loader(dataset)
 
     # missing frame specified as start
     check_for_immediate_error(loader, ['1/3:'], IOError)
@@ -407,7 +407,7 @@ def test_frames_with_empty_expression_list(loader):
 
 
 def test_frames_with_path_pointing_to_a_directory_instead_of_a_file(dataset, tmp_path):
-    loader = YcbVideoLoader(dataset)
+    loader = Loader(dataset)
 
     path_to_a_directory = tmp_path / 'not_a_file'
     path_to_a_directory.mkdir()

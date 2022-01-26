@@ -2,7 +2,7 @@ import re
 import sys
 
 from . import info
-from .loader import YcbVideoLoader
+from .loader import Loader
 
 
 def print_usage_info():
@@ -13,7 +13,7 @@ def print_usage_info():
 # sys.argv[0] is the name of the file executed
 if (argument_count := len(sys.argv)) >= 2:
     dataset = sys.argv[1]
-    loader = YcbVideoLoader(dataset)
+    loader = Loader(dataset)
     verbosity = 0
     frame_sequences = (f"{index:04d}" for index in range(92))
 

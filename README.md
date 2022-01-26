@@ -31,8 +31,8 @@ the 42th frame (*inclusive*) and stops just before the 56th frame (*exclusive*).
 stepsize is *1*, *42:56:2* would select every other frame and *42:56:-1* would give you the frames
 in reverse order.
 You can provide multiple of these expressions and receive the frames in the order of your expressions.
-Have a look at the section [Expressions](#expressions-in-detail) or the documentation for the `YCBVideoLoader.frames()`
-method for more ways and examples of how to specify the frames you're interested in.
+Have a look at the section [Expressions](#expressions-in-detail) or the documentation for the
+`Loader.frames()` method for more ways and examples of how to specify the frames you're interested in.
 
 The `data_syn` directory is also handled as a frame sequence, *\*/42* therefore would also include
 the 42th frame from the `data_syn` frame sequence. Leaving exactly this one out can be achieved
@@ -62,7 +62,7 @@ Do not modify the data afterwards!
 ```python
 import ycbvideo
 
-loader = ycbvideo.YCBVideoLoader('/path/to/data')
+loader = ycbvideo.Loader('/path/to/data')
 ```
 
 ### Accessing Frames

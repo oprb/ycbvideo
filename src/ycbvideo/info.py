@@ -2,7 +2,7 @@ import pkgutil
 import re
 from typing import List, Tuple, Callable, Iterable, Dict, TypeVar
 
-from .loader import YcbVideoLoader
+from .loader import Loader
 
 T = TypeVar('T')
 
@@ -67,7 +67,7 @@ def read_frame_count_per_frame_sequence() -> Dict[str, int]:
     return frames_per_sequence
 
 
-def print_frame_info(loader: YcbVideoLoader, sequences: Iterable[str], verbosity: int = 0):
+def print_frame_info(loader: Loader, sequences: Iterable[str], verbosity: int = 0):
     frames_info = loader.frames_info()
     sequence_count = len(frames_info)
     frames_total = read_frame_count_per_frame_sequence()

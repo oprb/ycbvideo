@@ -23,7 +23,7 @@ def _load_selection_expressions_from_file(file: Union[Path, str]) -> List[str]:
     return expressions
 
 
-class YcbVideoLoader:
+class Loader:
     def __init__(self, path: Union[Path, str]):
         self._path = utils.validate_directory_path(path)
         self._data_directory = self._path / 'data'
@@ -227,7 +227,7 @@ class YcbVideoLoader:
 
 
 class _FrameAccessor:
-    def __init__(self, loader: YcbVideoLoader, descriptors: Sequence[datatypes.Descriptor]):
+    def __init__(self, loader: Loader, descriptors: Sequence[datatypes.Descriptor]):
         self._loader = loader
         self._descriptors = descriptors
 
