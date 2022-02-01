@@ -9,13 +9,10 @@ from numpy import ndarray
 
 from . import utils
 
-FILE_PATTERN = re.compile(r'^(?P<index>[0-9]{6})-(?P<kindoffile>[a-z]+)\.(png|txt)$')
-BOUNDING_BOX_PATTERN = re.compile(r'^(?P<label>[^ ]+) ([0-9.]+) ([0-9.]+) ([0-9.]+) ([0-9.]+)$')
-
 
 class Box(NamedTuple):
     label: str
-    coordinates: Tuple[float, float, float, float]
+    coordinates: Tuple[Tuple[float, float], Tuple[float, float]]
 
 
 class Descriptor(NamedTuple):
@@ -32,6 +29,8 @@ class Frame(NamedTuple):
 
 
 class FrameSequence:
+    _FILE_PATTERN = re.compile(r'^(?P<index>[0-9]{6})-(?P<kindoffile>[a-z]+)\.(png|txt)$')
+
     def __init__(self, path: Union[Path, str]):
         self._path = utils.validate_directory_path(path)
         self._sequence_name = self._path.name
@@ -42,7 +41,7 @@ class FrameSequence:
 
         frame_sets = {}
         for file in files:
-            if match := FILE_PATTERN.match(file):
+            if match := FrameSequence._FILE_PATTERN.match(file):
                 index = match.group('index')
                 kind_of_file = match.group('kindoffile')
 
@@ -106,14 +105,13 @@ class FrameSequence:
             boxes = []
 
             for line in f:
-                if match := BOUNDING_BOX_PATTERN.match(line):
-                    label = match.group(1)
-                    coordinates = (float(match.group(2)),
-                                   float(match.group(3)),
-                                   float(match.group(4)),
-                                   float(match.group(5)))
-                    boxes.append(Box(label, coordinates))
-                else:
-                    raise ValueError(f"Box file has invalid format: {file}")
+                entries = line.split(' ')
+
+                label = entries[0]
+                x1, y1, x2, y2 = entries[1:]
+                coordinates = ((float(x1), float(y1)),
+                               (float(x2), float(y2)))
+
+                boxes.append(Box(label, coordinates))
 
         return boxes

@@ -115,8 +115,9 @@ def test_frames_with_sequence_0000(loader):
     with open('data/tests/ycb_video_dataset/data/0000/000001-box.txt', 'r') as f:
         for index, line in enumerate(f):
             box = boxes[index]
-            coordinate1, coordinate2, coordinate3, coordinate4 = box.coordinates
-            assert f"{box.label} {coordinate1} {coordinate2} {coordinate3} {coordinate4}\n" == line
+            x1, y1 = box.coordinates[0]
+            x2, y2 = box.coordinates[1]
+            assert f"{box.label} {x1} {y1} {x2} {y2}\n" == line
 
 
 def test_select_frames_from_selection(loader):
