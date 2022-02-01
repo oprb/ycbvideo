@@ -4,10 +4,14 @@ from ycbvideo import datatypes
 
 
 def test_get_available_frame_sets_with_a_sequence_from_data(incomplete_dataset):
-    # the frame sets 000001 - 000004 each miss one distinct file
-    # *-meta.mat files are not considered, so frame set 000005 is complete
+    # the frame sets 000001 - 000004 each miss at least one of the expected files
+    # frame set 000005 is complete
     dataset = incomplete_dataset(missing_files={
-        'data/0001': {'000001-color.png', '000002-depth.png', '000003-label.png', '000004-box.txt', '000005-meta.mat'}
+        'data/0001': {'000001-color.png',
+                      '000001-meta.mat',
+                      '000002-depth.png',
+                      '000003-label.png',
+                      '000004-box.txt'}
     })
 
     sequence = datatypes.FrameSequence(dataset / 'data' / '0001')
@@ -20,7 +24,8 @@ def test_get_available_frame_sets_with_a_sequence_from_data(incomplete_dataset):
     assert len(incomplete_frame_sets) == 4
     assert incomplete_frame_sets.keys() == {'000001', '000002', '000003', '000004'}
 
-    assert incomplete_frame_sets['000001'] == ['color']
+    assert 'color' in incomplete_frame_sets['000001']
+    assert 'meta' in incomplete_frame_sets['000001']
     assert incomplete_frame_sets['000002'] == ['depth']
     assert incomplete_frame_sets['000003'] == ['label']
     assert incomplete_frame_sets['000004'] == ['box']
@@ -29,11 +34,10 @@ def test_get_available_frame_sets_with_a_sequence_from_data(incomplete_dataset):
 def test_get_available_frame_sets_with_data_syn_sequence(incomplete_dataset):
     # data_syn/ lacks any *-box.txt files, a frame set is therefore considered complete even if *-box.txt is missing
 
-    # the frame sets 000001, 000002 and 000003 each miss one distinct file
-    # *-meta.mat files are not considered, so frame set 000004 is complete
-    # frame set 000005 is complete
+    # the frame sets 000001 - 000003 each miss at least one of the expected files
+    # frame sets 000004 and 000005 are complete
     dataset = incomplete_dataset(missing_files={
-        'data_syn': {'000001-color.png', '000002-depth.png', '000003-label.png', '000004-meta.mat'}
+        'data_syn': {'000001-color.png', '000001-meta.mat', '000002-depth.png', '000003-label.png'}
     })
 
     sequence = datatypes.FrameSequence(dataset / 'data_syn')
@@ -47,16 +51,18 @@ def test_get_available_frame_sets_with_data_syn_sequence(incomplete_dataset):
     assert len(incomplete_frame_sets) == 3
     assert incomplete_frame_sets.keys() == {'000001', '000002', '000003'}
 
-    assert incomplete_frame_sets['000001'] == ['color']
+    assert 'color' in incomplete_frame_sets['000001']
+    assert 'meta' in incomplete_frame_sets['000001']
     assert incomplete_frame_sets['000002'] == ['depth']
+    assert incomplete_frame_sets['000003'] == ['label']
     assert incomplete_frame_sets['000003'] == ['label']
 
 
 def test_get_complete_frame_sets_with_a_sequence_from_data(incomplete_dataset):
-    # the frame sets 000001 - 000004 each miss one distinct file
-    # *-meta.mat files are not considered, so frame set 000005 is complete
+    # the frame sets 000001 - 000004 each miss at least one of the expected files
+    # frame set 000005 is complete
     dataset = incomplete_dataset(missing_files={
-        'data/0001': {'000001-color.png', '000002-depth.png', '000003-label.png', '000004-box.txt', '000005-meta.mat'}
+        'data/0001': {'000001-color.png', '000001-meta.mat', '000002-depth.png', '000003-label.png', '000004-box.txt'}
     })
 
     sequence = datatypes.FrameSequence(dataset / 'data' / '0001')
@@ -70,11 +76,10 @@ def test_get_complete_frame_sets_with_a_sequence_from_data(incomplete_dataset):
 def test_get_complete_frame_sets_with_data_syn_sequence(incomplete_dataset):
     # data_syn/ lacks any *-box.txt files, a frame set is therefore considered complete even if *-box.txt is missing
 
-    # the frame sets 000001, 000002 and 000003 each miss one distinct file
-    # *-meta.mat files are not considered, so frame set 000004 is complete
-    # frame set 000005 is complete
+    # the frame sets 000001 - 000003 each miss at least one of the expected files
+    # frame sets 000004 and 000005 are complete
     dataset = incomplete_dataset(missing_files={
-        'data_syn': {'000001-color.png', '000002-depth.png', '000003-label.png', '000004-meta.mat'}
+        'data_syn': {'000001-color.png', '000001-meta.mat', '000002-depth.png', '000003-label.png'}
     })
 
     sequence = datatypes.FrameSequence(dataset / 'data_syn')
@@ -87,10 +92,10 @@ def test_get_complete_frame_sets_with_data_syn_sequence(incomplete_dataset):
 
 
 def test_get_incomplete_frame_sets_with_a_sequence_from_data(incomplete_dataset):
-    # the frame sets 000001 - 000004 each miss one distinct file
-    # *-meta.mat files are not considered, so frame set 000005 is complete
+    # the frame sets 000001 - 000004 each miss at least one of the expected files
+    # frame set 000005 is complete
     dataset = incomplete_dataset(missing_files={
-        'data/0001': {'000001-color.png', '000002-depth.png', '000003-label.png', '000004-box.txt', '000005-meta.mat'}
+        'data/0001': {'000001-color.png', '000001-meta.mat', '000002-depth.png', '000003-label.png', '000004-box.txt'}
     })
 
     sequence = datatypes.FrameSequence(dataset / 'data' / '0001')
@@ -100,7 +105,8 @@ def test_get_incomplete_frame_sets_with_a_sequence_from_data(incomplete_dataset)
     assert len(frame_sets) == 4
     assert frame_sets.keys() == {'000001', '000002', '000003', '000004'}
 
-    assert frame_sets['000001'] == ['color']
+    assert 'color' in frame_sets['000001']
+    assert 'meta' in frame_sets['000001']
     assert frame_sets['000002'] == ['depth']
     assert frame_sets['000003'] == ['label']
     assert frame_sets['000004'] == ['box']
@@ -109,11 +115,10 @@ def test_get_incomplete_frame_sets_with_a_sequence_from_data(incomplete_dataset)
 def test_get_incomplete_frame_sets_with_data_syn_sequence(incomplete_dataset):
     # data_syn/ lacks any *-box.txt files, a frame set is therefore considered complete even if *-box.txt is missing
 
-    # the frame sets 000001, 000002 and 000003 each miss one distinct file
-    # *-meta.mat files are not considered, so frame set 000004 is complete
-    # frame set 000005 is complete
+    # the frame sets 000001 - 000003 each miss at least one of the expected files
+    # frame sets 000004 and 000005 are complete
     dataset = incomplete_dataset(missing_files={
-        'data_syn': {'000001-color.png', '000002-depth.png', '000003-label.png', '000004-meta.mat'}
+        'data_syn': {'000001-color.png', '000001-meta.mat', '000002-depth.png', '000003-label.png'}
     })
 
     sequence = datatypes.FrameSequence(dataset / 'data_syn')
@@ -123,7 +128,8 @@ def test_get_incomplete_frame_sets_with_data_syn_sequence(incomplete_dataset):
     assert len(frame_sets) == 3
     assert frame_sets.keys() == {'000001', '000002', '000003'}
 
-    assert frame_sets['000001'] == ['color']
+    assert 'color' in frame_sets['000001']
+    assert 'meta' in frame_sets['000001']
     assert frame_sets['000002'] == ['depth']
     assert frame_sets['000003'] == ['label']
 
@@ -140,6 +146,7 @@ def test_get_frame(dataset, identifier):
     assert frame.depth is not None
     assert frame.label is not None
     assert frame.boxes is not None
+    assert frame.meta is not None
 
     boxes = frame.boxes
     # compare every line with the corresponding box item

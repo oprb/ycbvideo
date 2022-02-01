@@ -38,6 +38,7 @@ def check_frame_items(frames: Iterable[ycbvideo.datatypes.Frame]):
         assert frame.color is not None
         assert frame.depth is not None
         assert frame.label is not None
+        assert frame.meta is not None
 
         assert frame.boxes is not None if frame.description.frame_sequence != 'data_syn' else frame.boxes is None
 
@@ -232,12 +233,8 @@ def test_frames_with_missing_files(incomplete_dataset):
     # both depth and label images are missing
     check_for_immediate_error(loader, ['2/1', '2/2'], IOError)
 
-    # meta.mat files are not required and can be missing
-    frame = next(iter(loader.frames(['data_syn/2'])))
-    assert frame.description == ycbvideo.datatypes.Descriptor('data_syn', '000002')
-    assert frame.color is not None
-    assert frame.depth is not None
-    assert frame.label is not None
+    # meta.mat file is missing
+    check_for_immediate_error(loader, ['data_syn/2'], IOError)
 
 
 def test_frames_info_with_no_missing_frames(loader):
@@ -285,10 +282,9 @@ def test_frames_info_with_missing_frames(incomplete_dataset):
             '000004': None,
             '000005': None
         },
-        # *-meta.mat files are not required nor checked for
         'data_syn': {
             '000001': None,
-            '000002': None,
+            '000002': ['meta'],
             '000003': None,
             '000004': ['label'],
             '000005': None
@@ -319,7 +315,7 @@ def test_frames_with_valid_range_expressions(loader):
 
 def test_frames_with_range_expressions_and_missing_frames(incomplete_dataset):
     dataset = incomplete_dataset(missing_files={
-        'data/0001': {'000003-color.png', '000003-depth.png', '000003-label.png', '000003-box.txt'}
+        'data/0001': {'000003-color.png', '000003-depth.png', '000003-label.png', '000003-box.txt', '000003-meta.mat'}
     })
 
     frames = list(Loader(dataset).frames(['1/:']))
@@ -338,7 +334,7 @@ def test_frames_with_range_expressions_and_missing_frames(incomplete_dataset):
 
 def test_frames_with_missing_frames_specified_as_start_or_stop_in_range_expression(incomplete_dataset):
     dataset = incomplete_dataset(missing_files={
-        'data/0001': {'000003-color.png', '000003-depth.png', '000003-label.png', '000003-box.txt'}
+        'data/0001': {'000003-color.png', '000003-depth.png', '000003-label.png', '000003-box.txt', '000003-meta.mat'}
     })
 
     loader = Loader(dataset)

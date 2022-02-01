@@ -6,6 +6,7 @@ from typing import Union, NamedTuple, Tuple, List, Dict, Optional
 
 import imageio
 from numpy import ndarray
+import scipy.io
 
 from . import utils
 
@@ -25,11 +26,12 @@ class Frame(NamedTuple):
     depth: ndarray
     boxes: Optional[List[Box]]
     label: ndarray
+    meta: Dict
     description: Descriptor
 
 
 class FrameSequence:
-    _FILE_PATTERN = re.compile(r'^(?P<index>[0-9]{6})-(?P<kindoffile>[a-z]+)\.(png|txt)$')
+    _FILE_PATTERN = re.compile(r'^(?P<index>[0-9]{6})-(?P<kindoffile>[a-z]+)\.(png|txt|mat)$')
 
     def __init__(self, path: Union[Path, str]):
         self._path = utils.validate_directory_path(path)
@@ -50,7 +52,7 @@ class FrameSequence:
 
                 frame_sets[index].add(kind_of_file)
 
-        expected_kind_of_files = ['color', 'depth', 'label']
+        expected_kind_of_files = ['color', 'depth', 'label', 'meta']
         if self._sequence_name != 'data_syn':
             expected_kind_of_files.append('box')
 
@@ -97,6 +99,7 @@ class FrameSequence:
             depth=imageio.imread(self._path / f"{index}-depth.png"),
             boxes=self._get_boxes(index) if self._sequence_name != 'data_syn' else None,
             label=imageio.imread(self._path / f"{index}-label.png"),
+            meta=scipy.io.loadmat(str(self._path / f"{index}-meta.mat")),
             description=Descriptor(self._path.name, index))
 
     def _get_boxes(self, index: str) -> List[Box]:
