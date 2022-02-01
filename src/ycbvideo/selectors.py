@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List, Optional
+from typing import List, Literal, Optional
 
 
 class ElementSelector(ABC):
@@ -14,7 +14,8 @@ class ElementSelector(ABC):
 
 
 class SingleElementSelector(ElementSelector):
-    def __init__(self, expression: str, element: str):
+    def __init__(self, kind: Literal['sequence', 'frame'], expression: str, element: str):
+        self._kind = kind
         self._expression = expression
         self._element_to_select = element
 
@@ -23,7 +24,7 @@ class SingleElementSelector(ElementSelector):
 
         if self._element_to_select not in elements:
             raise MissingElementError(
-                message=f"Single element missing: {self._expression}",
+                message=f"Single element missing: {self._kind} {self._expression}",
                 element=self._element_to_select,
                 elements=elements)
 
@@ -31,7 +32,8 @@ class SingleElementSelector(ElementSelector):
 
 
 class ListSelector(ElementSelector):
-    def __init__(self, expression: str, elements: List[str]):
+    def __init__(self, kind: Literal['sequence', 'frame'], expression: str, elements: List[str]):
+        self._kind = kind
         self._expression = expression
         self._elements_to_select = elements
 
@@ -41,7 +43,8 @@ class ListSelector(ElementSelector):
         for index, element in enumerate(self._elements_to_select):
             if element not in elements:
                 raise MissingElementError(
-                    message=f"List element missing: {self.get_list_expression_element(index)} at index {index}",
+                    message='List element missing:' +
+                            f" {self._kind } {self.get_list_expression_element(index)} at index {index}",
                     element=element,
                     elements=elements)
 
@@ -52,6 +55,9 @@ class ListSelector(ElementSelector):
 
 
 class StarSelector(ElementSelector):
+    def __init__(self, kind: Literal['sequence', 'frame']):
+        self._kind = kind
+
     def select(self, elements: List[str]) -> List[str]:
         ElementSelector.check_elements_to_select_from(elements)
 
@@ -59,6 +65,9 @@ class StarSelector(ElementSelector):
 
 
 class DataSelector(ElementSelector):
+    def __init__(self):
+        self._kind = 'sequence'
+
     def select(self, elements: List[str]) -> List[str]:
         ElementSelector.check_elements_to_select_from(elements)
 
@@ -66,12 +75,15 @@ class DataSelector(ElementSelector):
 
 
 class DataSynSelector(ElementSelector):
+    def __init__(self):
+        self._kind = 'sequence'
+
     def select(self, elements: List[str]) -> List[str]:
         ElementSelector.check_elements_to_select_from(elements)
 
         if 'data_syn' not in elements:
             raise MissingElementError(
-                message="'data_syn' sequence missing",
+                message="data_syn sequence missing",
                 element='data_syn',
                 elements=elements
             )
@@ -80,7 +92,12 @@ class DataSynSelector(ElementSelector):
 
 
 class RangeSelector(ElementSelector):
-    def __init__(self, expression: str, start: Optional[str], stop: Optional[str], step: int = 1):
+    def __init__(self,
+                 kind: Literal['sequence', 'frame'],
+                 expression: str, start: Optional[str],
+                 stop: Optional[str],
+                 step: int = 1):
+        self._kind = kind
         self._expression = expression
 
         self.check_range_elements(start, stop, step)
@@ -90,6 +107,10 @@ class RangeSelector(ElementSelector):
 
     def select(self, elements: List[str]) -> List[str]:
         ElementSelector.check_elements_to_select_from(elements)
+
+        if self._kind == 'sequence':
+            # data_syn has to be excluded
+            elements = [element for element in elements if element.isdigit()]
 
         if self._start:
             try:
@@ -104,7 +125,10 @@ class RangeSelector(ElementSelector):
             try:
                 stop_index = elements.index(self._stop)
             except ValueError as error:
-                raise MissingElementError(f"Range stop element missing: {self._stop}", self._stop, elements) from error
+                raise MissingElementError(
+                    f"Range stop element missing: {self._kind} {self._stop}",
+                    self._stop,
+                    elements) from error
         else:
             stop_index = None
 

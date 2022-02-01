@@ -332,6 +332,49 @@ def test_frames_with_range_expressions_and_missing_frames(incomplete_dataset):
     check_descriptors(frames, expected_descriptors)
 
 
+def test_frames_with_range_expressions_and_missing_sequences(dataset):
+    shutil.rmtree(dataset / 'data' / '0001')
+
+    frames = list(Loader(dataset).frames([':/1']))
+
+    assert len(frames) == 2
+
+    expected_descriptors = [
+        ('0000', '000001'),
+        ('0002', '000001'),
+    ]
+
+    check_descriptors(frames, expected_descriptors)
+
+
+def test_frames_with_range_expressions_and_incomplete_frames(incomplete_dataset):
+    dataset = incomplete_dataset(missing_files={
+        'data/0000': {'000003-meta.mat'},
+        'data/0001': {'000003-color.png', '000005-depth.png'},
+        'data/0002': {'000003-label.png', '000005-box.txt'}
+    })
+
+    loader = Loader(dataset)
+
+    # incomplete frame 000003 included in range
+    check_for_immediate_error(loader, ['0/:'], IOError)
+    # incomplete frame 000003 as start
+    check_for_immediate_error(loader, ['0/3:'], IOError)
+
+    # incomplete frame 000003 included in range
+    check_for_immediate_error(loader, ['1/:4'], IOError)
+    # incomplete frame 000003 as start
+    check_for_immediate_error(loader, ['1/3:'], IOError)
+    # incomplete frame 000005 as implicit range stop
+    check_for_immediate_error(loader, ['1/4:'], IOError)
+    # incomplete frame 000003 included in range
+    check_for_immediate_error(loader, ['2/:4'], IOError)
+    # incomplete frame 000003 as start
+    check_for_immediate_error(loader, ['2/3:'], IOError)
+    # incomplete frame 000005 as implicit range stop
+    check_for_immediate_error(loader, ['2/4:'], IOError)
+
+
 def test_frames_with_missing_frames_specified_as_start_or_stop_in_range_expression(incomplete_dataset):
     dataset = incomplete_dataset(missing_files={
         'data/0001': {'000003-color.png', '000003-depth.png', '000003-label.png', '000003-box.txt', '000003-meta.mat'}

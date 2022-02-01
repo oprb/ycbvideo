@@ -35,7 +35,7 @@ class Parser:
         if expression.isdigit() and len(expression) <= max_length:
             normalized_element = utils.normalize_element(expression, kind)
 
-            return selectors.SingleElementSelector(expression, normalized_element)
+            return selectors.SingleElementSelector(kind, expression, normalized_element)
 
         return None
 
@@ -46,15 +46,15 @@ class Parser:
 
             normalized_elements = [utils.normalize_element(element, kind) for element in elements]
 
-            return selectors.ListSelector(expression, normalized_elements)
+            return selectors.ListSelector(kind, expression, normalized_elements)
 
         return None
 
     @staticmethod
-    def _star_expression(expression: str, _kind) -> Optional[selectors.StarSelector]:
+    def _star_expression(expression: str, kind: Literal['sequence', 'frame']) -> Optional[selectors.StarSelector]:
         # star expression work the same for sequences and frames, therefore _kind is ignored
         # _kind is only specified to conform with the common signature
-        return selectors.StarSelector() if expression == '*' else None
+        return selectors.StarSelector(kind) if expression == '*' else None
 
     @staticmethod
     def _data_expression(expression: str, kind: str) -> Optional[selectors.DataSelector]:
@@ -77,7 +77,7 @@ class Parser:
             stop = utils.normalize_optional_element(match.group('stop'), kind)
             step = int(match.group('step') or 1)
 
-            return selectors.RangeSelector(expression, start, stop, step)
+            return selectors.RangeSelector(kind, expression, start, stop, step)
 
     @staticmethod
     def _get_sequence_and_frame_expression(expression: str) -> Tuple[str, str]:

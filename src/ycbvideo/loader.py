@@ -91,18 +91,24 @@ class Loader:
 
         for sequence in selected_sequences:
             sequence_object = self.get_frame_sequence(sequence)
-            available_frames = sorted(sequence_object.get_complete_frame_sets())
+
+            complete_frames = sequence_object.get_complete_frame_sets()
+            incomplete_frames = sequence_object.get_incomplete_frame_sets()
+            # let the selector select from all frames available, even if some frames might be incomplete
+            available_frames = sorted([*complete_frames, *incomplete_frames.keys()])
 
             try:
                 selected_frames = selector.select_frames(available_frames)
             except selectors.MissingElementError as error:
                 frame = error.element
-                if frame in (incomplete_frame_sets := sequence_object.get_incomplete_frame_sets()):
-                    missing_files = incomplete_frame_sets[frame]
 
-                    raise IOError(f"Files for frame missing: {sequence}/{frame} misses {missing_files}")
-                else:
-                    raise IOError(f"Frame is not available: {sequence}/{frame}")
+                raise IOError(f"Frame is not available: {sequence}/{frame}")
+
+            if selected_incomplete_frames := (set(selected_frames).difference(complete_frames)):
+                incomplete_frame = list(selected_incomplete_frames)[0]
+                missing_files = incomplete_frames[incomplete_frame]
+
+                raise IOError(f"Files for frame missing: {sequence}/{incomplete_frame} misses {missing_files}")
 
             for frame in selected_frames:
                 descriptors.append(datatypes.Descriptor(sequence, frame))
