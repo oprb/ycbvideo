@@ -8,18 +8,20 @@ You can find more information and a download link for the dataset
 
 It allows access to the *frames*, located either in `data` or the `data_syn` folders. A frame
 here corresponds to all the information available for one portion of time, i.e. not only the color
-image, but the color/depth/label images and for the frames in `data` also the bounding box coordinates.
+image, but the color/depth/label images, the data from the *-meta.mat files and for the frames in
+`data` also the bounding box coordinates.
 Frames are grouped in *frame sequences* of consecutive frames.
 Frames and frame sequences can be specified by *frame selection expressions*.
 
 Example:
 
-Frame 42 from frame sequence 7 corresponds to the following data
+Frame 42 from frame sequence 7 corresponds to the data from the following files
 
 * `data/0007/000042-color.png`
 * `data/0007/000042-depth.png`
 * `data/0007/000042-label.png`
 * `data/0007/000042-box.txt`
+* `data/0007/000042-meta.mat`
 
 and can be specified by the frame selection expression *7/42* to just specify this single frame.
 If you'd like to specify e.g. the 42th frame for each *available* frame sequence, you could express
