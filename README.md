@@ -184,7 +184,9 @@ If *STEP* is omitted, the step size equals *1*. *START* and *STOP* both have to 
 to reverse order of the specified elements. Step sizes other than *1* or *-1* are also
 allowed. Obviously, a step size of *0* is not allowed.
 
-## Missing data
+## Missing or incomplete data
+
+### Missing data
 
 Working with only a subset of the dataset is no problem.
 
@@ -199,8 +201,17 @@ expression" *[42,43,44,45]* in the former example would instantly result in an e
 since element 44 is *not* available. A "Star expressions" would not complain. Also,
 "range expressions", where the start and stop or both are omitted (e.g *42:*, *:45* or *:*)
 will not complain since all "named" elements are available. Be aware this also means,
-that *you* are responsible for making sure that all elements you expect to be on your disk
-are there in these cases.
+that *you* are responsible for making sure that all elements you expect to be selected
+are in fact on your disk.
+
+### Incomplete (frame) data
+
+If all files corresponding to a frame are on your disk, the frame is "complete" and
+might be loaded. If it misses at least one of the files, it is considered "incomplete"
+and cannot be loaded. This not only applies to "named" (frame) elements (like with
+missing data), but also to implicitly specified elements like in a range expression.
+An attempt to select *42:45*, when frame 42, 43 and 45 are there and complete but
+frame 44 is incomplete , will therefore fail.
 
 By running
 
@@ -209,6 +220,8 @@ python -m ycbvideo /path/to/data
 ```
 
 you can manually inspect and check the integrity of the portion of the dataset on your disk.
+It will show you which and how many frame sequences and frames are on your disk and which files
+might be missing.
 
 ## Roadmap
 
