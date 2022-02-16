@@ -2,7 +2,7 @@ import functools
 import os
 from pathlib import Path
 import random
-from typing import List, Iterable, Union, Dict, Optional, Sequence
+from typing import List, Iterable, Union, Dict, Optional
 
 from . import datatypes, parsing, selectors, utils
 
@@ -226,14 +226,16 @@ class Loader:
         else:
             raise TypeError('frames has to be of type list, pathlib.Path or str')
 
-        if shuffle:
-            random.shuffle(frame_descriptors)
+        frame_accessor = _FrameAccessor(self, frame_descriptors)
 
-        return _FrameAccessor(self, frame_descriptors)
+        if shuffle:
+            frame_accessor.shuffle()
+
+        return frame_accessor
 
 
 class _FrameAccessor:
-    def __init__(self, loader: Loader, descriptors: Sequence[datatypes.Descriptor]):
+    def __init__(self, loader: Loader, descriptors: List[datatypes.Descriptor]):
         self._loader = loader
         self._descriptors = descriptors
 
@@ -241,6 +243,9 @@ class _FrameAccessor:
         sequence_object = self._loader.get_frame_sequence(descriptor.frame_sequence)
 
         return sequence_object.get_frame(descriptor.frame)
+
+    def shuffle(self):
+        random.shuffle(self._descriptors)
 
     def __iter__(self):
         for descriptor in self._descriptors:
