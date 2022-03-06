@@ -2,7 +2,7 @@ import functools
 import os
 from pathlib import Path
 import random
-from typing import List, Iterable, Union, Dict, Optional
+from typing import List, Iterable, Union, Dict, Optional, Sized
 
 from . import datatypes, parsing, selectors, utils
 
@@ -234,7 +234,7 @@ class Loader:
         return frame_accessor
 
 
-class _FrameAccessor:
+class _FrameAccessor(Sized, Iterable):
     def __init__(self, loader: Loader, descriptors: List[datatypes.Descriptor]):
         self._loader = loader
         self._descriptors = descriptors
