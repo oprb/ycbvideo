@@ -35,7 +35,7 @@ def normalize_element(element: str, kind: Literal['sequence', 'frame']) -> str:
 
 
 def normalize_optional_element(element: Optional[str], kind: Literal['sequence', 'frame']) -> Optional[str]:
-    if not element:
+    if element is None:
         return element
 
     return normalize_element(element, kind)

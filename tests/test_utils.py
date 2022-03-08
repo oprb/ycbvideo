@@ -42,7 +42,13 @@ def test_normalize_element(kind):
 
 
 @pytest.mark.parametrize('kind', ['sequence', 'frame'])
-def test_normalize_element(kind):
+def test_normalize_optional_element(kind):
+    # make sure that None is explicitly handled and
+    # "falsy" values like '' (the empty string)
+    # do not pass
+    with pytest.raises(ValueError):
+        utils.normalize_optional_element('', kind)
+
     with pytest.raises(ValueError):
         utils.normalize_optional_element('not_a_digit', kind)
 
