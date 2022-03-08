@@ -150,6 +150,28 @@ random.seed(42)
 loader.frames(frames=..., shuffle=True)
 ```
 
+### Customizing iteration
+
+In order to customize iteration of frames to your needs, you can, instead of accessing
+the frames directly, access frames one-by-one by specifying their corresponding description.
+
+```python
+# get descriptors by specifying selection expressions
+# for the corresponding frames
+# expression_source can again be a list or a path to a file
+descriptions = loader.get_descriptors(expression_source=...)
+
+# or provide descriptions yourself
+# a description is simply a tuple: (sequence_index, frame_index)
+descriptions = [('42', '1'), ('5', '13'), ...]
+
+# iterate over the frames specified by your descriptions
+for description in descriptions:
+  frame = loader.get_frame(description)
+
+  # do something with the frame
+```
+
 ## Expressions in detail
 
 Selection expressions consist of two parts: An expression for specifying one
