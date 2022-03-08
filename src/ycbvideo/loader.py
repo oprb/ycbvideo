@@ -2,7 +2,7 @@ import functools
 import os
 from pathlib import Path
 import random
-from typing import List, Iterable, Union, Dict, Optional, Sized
+from typing import List, Iterable, Union, Dict, Optional, Sized, Tuple
 
 from . import datatypes, parsing, selectors, utils
 
@@ -206,12 +206,82 @@ class Loader:
             an int index e.g. iterable[42]
         """
 
-        if isinstance(frames, list):
-            if not frames:
+        descriptors = self.get_descriptors(frames)
+
+        frame_accessor = _FrameAccessor(self, descriptors)
+
+        if shuffle:
+            frame_accessor.shuffle()
+
+        return frame_accessor
+
+    def get_descriptors(self, expression_source: Union[List[str], Union[Path, str]]) -> List[datatypes.Descriptor]:
+        """
+        Return a list of descriptors for all existing frames,
+        which would get selected by the given selection
+        expression.
+
+        Parameters
+        ----------
+        expression_source : Union[List[str], Union[pathlib.Path, str]]
+                            Either a list of selection expressions
+                            or a path to a file containing selection
+                            expressions.
+                            The path can either be a string or a
+                            Path object.
+                            If path is not absolute, it is assumed
+                            to be relative to the root of the dataset.
+
+        Returns
+        ------
+        List[Descriptor]
+            A list of descriptors
+        """
+
+        expressions = self._get_expressions_from_source(expression_source)
+
+        return self._get_descriptors(expressions)
+
+    def get_frame(self, description: Tuple[Union[str, int], Union[str, int]]) -> datatypes.Frame:
+        """
+        Return the frame specified by the given description.
+
+        Parameters
+        ----------
+        description : Tuple[Union[str, int], Union[str, int]]
+                      Description for the requested frame,
+                      like e.g. a descriptor returned by
+                      get_descriptors(expression_source)
+        Returns
+        -------
+        Frame
+            The frame specified by the given description,
+            if it exists.
+        """
+
+        sequence_description, frame_description = description
+
+        if not isinstance(sequence_description, (str, int)) or not isinstance(frame_description, (str, int)):
+            raise TypeError('Sequence and frame description must be of type str or int')
+
+        # handle possible ints
+        sequence_description = str(sequence_description)
+        frame_description = str(frame_description)
+
+        sequence_index = (sequence_description if sequence_description == 'data_syn'
+                          else utils.normalize_element(sequence_description, 'sequence'))
+        frame_index = utils.normalize_element(frame_description, 'frame')
+
+        return self.get_frame_sequence(sequence_index).get_frame(frame_index)
+
+    def _get_expressions_from_source(self, source: Union[List[str], Union[Path, str]]):
+        if isinstance(source, list):
+            if not source:
                 raise ValueError('List is empty')
-            frame_descriptors = self._get_descriptors(frames)
-        elif isinstance(frames, (Path, str)):
-            path = Path(frames)
+
+            return source
+        elif isinstance(source, (Path, str)):
+            path = Path(source)
 
             if not path.is_absolute():
                 path = self._path / path
@@ -221,17 +291,9 @@ class Loader:
             elif not path.is_file():
                 raise IOError(f"Path is not a file: {path}")
 
-            expressions = _load_selection_expressions_from_file(path)
-            frame_descriptors = self._get_descriptors(expressions)
-        else:
-            raise TypeError('frames has to be of type list, pathlib.Path or str')
+            return _load_selection_expressions_from_file(path)
 
-        frame_accessor = _FrameAccessor(self, frame_descriptors)
-
-        if shuffle:
-            frame_accessor.shuffle()
-
-        return frame_accessor
+        raise TypeError('source has to be a list, a pathlib.Path or a str')
 
 
 class _FrameAccessor(Sized, Iterable):
@@ -239,17 +301,12 @@ class _FrameAccessor(Sized, Iterable):
         self._loader = loader
         self._descriptors = descriptors
 
-    def _get_frame(self, descriptor: datatypes.Descriptor) -> datatypes.Frame:
-        sequence_object = self._loader.get_frame_sequence(descriptor.frame_sequence)
-
-        return sequence_object.get_frame(descriptor.frame)
-
     def shuffle(self):
         random.shuffle(self._descriptors)
 
     def __iter__(self):
         for descriptor in self._descriptors:
-            yield self._get_frame(descriptor)
+            yield self._loader.get_frame(descriptor)
 
     def __len__(self):
         return len(self._descriptors)
@@ -257,7 +314,7 @@ class _FrameAccessor(Sized, Iterable):
     def __getitem__(self, index: int):
         if isinstance(index, int):
             if 0 <= index < len(self):
-                return self._get_frame(self._descriptors[index])
+                return self._loader.get_frame(self._descriptors[index])
 
             raise ValueError('index out of range')
 
