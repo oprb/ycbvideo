@@ -1,10 +1,8 @@
-import functools
-import os
 from pathlib import Path
 import random
 from typing import List, Iterable, Union, Dict, Optional, Sized, Tuple
 
-from . import datatypes, parsing, selectors, utils
+from . import dataset_access, descriptor_creation, datatypes, utils
 
 
 def _load_selection_expressions_from_file(file: Union[Path, str]) -> List[str]:
@@ -26,16 +24,15 @@ def _load_selection_expressions_from_file(file: Union[Path, str]) -> List[str]:
 class Loader:
     def __init__(self, path: Union[Path, str]):
         self._path = utils.validate_directory_path(path)
-        self._data_directory = self._path / 'data'
-        self._data_syn_directory = self._path / 'data_syn'
-        self._available_frame_sequences = self.get_available_frame_sequences()
+        self._data_access = dataset_access.DatasetAccess(self._path)
+        self._descriptor_creator = descriptor_creation.DescriptorCreator(self._data_access)
 
     def frames_info(self) -> Dict[str, Dict[str, Optional[List[str]]]]:
-        available_sequences = sorted(self.get_available_frame_sequences())
+        available_sequences = sorted(self._data_access.get_available_frame_sequences())
 
         info = {}
         for sequence_identifier in available_sequences:
-            sequence = self.get_frame_sequence(sequence_identifier)
+            sequence = self._data_access.get_frame_sequence(sequence_identifier)
             complete_frame_sets, incomplete_frame_sets = sequence.get_available_frame_sets()
 
             frame_sets = {}
@@ -47,73 +44,6 @@ class Loader:
             info[sequence_identifier] = frame_sets
 
         return info
-
-    def get_available_data_frame_sequences(self) -> List[str]:
-        return os.listdir(self._data_directory)
-
-    def get_available_frame_sequences(self) -> List[str]:
-        available_sequences = self.get_available_data_frame_sequences()
-
-        if self._data_syn_directory.exists():
-            available_sequences.append(self._data_syn_directory.name)
-
-        return available_sequences
-
-    @functools.lru_cache()
-    def get_frame_sequence(self, index: Union[str, int]) -> datatypes.FrameSequence:
-        if isinstance(index, int):
-            index = "{:04d}".format(index)
-
-        path = self._data_syn_directory if index == self._data_syn_directory.name else self._data_directory / index
-
-        if index not in self.get_available_frame_sequences():
-            raise IOError(f"Frame sequence does not exist: {index} ({path})")
-
-        return datatypes.FrameSequence(path)
-
-    def _get_descriptors(self, expressions: List[str]) -> List[datatypes.Descriptor]:
-        selectors = parsing.parse_selection_expressions(expressions)
-
-        descriptors = []
-        for selector in selectors:
-            descriptors.extend(self._create_descriptors_from_selector(selector))
-
-        return descriptors
-
-    def _create_descriptors_from_selector(self, selector: selectors.Selector) -> List[datatypes.Descriptor]:
-        available_sequences = sorted(self.get_available_frame_sequences())
-
-        descriptors = []
-        try:
-            selected_sequences = selector.select_sequences(available_sequences)
-        except selectors.MissingElementError as error:
-            raise IOError(f"Frame sequence is not available: {error.element}")
-
-        for sequence in selected_sequences:
-            sequence_object = self.get_frame_sequence(sequence)
-
-            complete_frames = sequence_object.get_complete_frame_sets()
-            incomplete_frames = sequence_object.get_incomplete_frame_sets()
-            # let the selector select from all frames available, even if some frames might be incomplete
-            available_frames = sorted([*complete_frames, *incomplete_frames.keys()])
-
-            try:
-                selected_frames = selector.select_frames(available_frames)
-            except selectors.MissingElementError as error:
-                frame = error.element
-
-                raise IOError(f"Frame is not available: {sequence}/{frame}")
-
-            if selected_incomplete_frames := (set(selected_frames).difference(complete_frames)):
-                incomplete_frame = list(selected_incomplete_frames)[0]
-                missing_files = incomplete_frames[incomplete_frame]
-
-                raise IOError(f"Files for frame missing: {sequence}/{incomplete_frame} misses {missing_files}")
-
-            for frame in selected_frames:
-                descriptors.append(datatypes.Descriptor(sequence, frame))
-
-        return descriptors
 
     def frames(self, frames: Union[List[str], Union[Path, str]], shuffle: bool = False) -> Iterable[datatypes.Frame]:
         """
@@ -240,7 +170,7 @@ class Loader:
 
         expressions = self._get_expressions_from_source(expression_source)
 
-        return self._get_descriptors(expressions)
+        return self._descriptor_creator.get_descriptors(expressions)
 
     def get_frame(self, description: Tuple[Union[str, int], Union[str, int]]) -> datatypes.Frame:
         """
@@ -272,7 +202,7 @@ class Loader:
                           else utils.normalize_element(sequence_description, 'sequence'))
         frame_index = utils.normalize_element(frame_description, 'frame')
 
-        return self.get_frame_sequence(sequence_index).get_frame(frame_index)
+        return self._data_access.get_frame_sequence(sequence_index).get_frame(frame_index)
 
     def _get_expressions_from_source(self, source: Union[List[str], Union[Path, str]]):
         if isinstance(source, list):
