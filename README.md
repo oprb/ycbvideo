@@ -136,10 +136,6 @@ builtin and index-based element access:
   frame = frames[42]
   ```
 
-Keep in mind that the returned object is *not* really a list and it's functional
-dependent from the loader, from which it was returned, so don't delete the loader or
-modify its internal state afterwards.
-
 If you want the frames to be shuffled for e.g. training in machine learning, just set the corresponding
 keyword argument to `True`. Optionally, you can set a *seed* to get the same shuffling result for each run:
 
@@ -150,27 +146,48 @@ random.seed(42)
 loader.frames(frames=..., shuffle=True)
 ```
 
-### Customizing iteration
+#### Customizing iteration
 
 In order to customize iteration of frames to your needs, you can, instead of accessing
-the frames directly, access frames one-by-one by specifying their corresponding description.
+the frames directly, access frames one-by-one by specifying their corresponding descriptors.
+A descriptor is simply the combination of *frame sequence id* and *frame id*, e.g.
+the tuple `('0001', '000042')` for frame 42 from frame sequence 0001.
 
 ```python
-# get descriptors by specifying selection expressions
-# for the corresponding frames
-# expression_source can again be a list or a path to a file
-descriptions = loader.get_descriptors(expression_source=...)
+# get the frame access object
+frames = loader.frames(...)
 
-# or provide descriptions yourself
-# a description is simply a tuple: (sequence_index, frame_index)
-descriptions = [('42', '1'), ('5', '13'), ...]
+# access the underlying descriptors
+descriptions = frames.get_descriptors()
 
-# iterate over the frames specified by your descriptions
+# modify the list of descriptions
+# in any way according to your use case
+...
+
+# iterate over the frames specified by the descriptions
 for description in descriptions:
-  frame = loader.get_frame(description)
+  frames.get_frame(description)
 
   # do something with the frame
 ```
+
+If you need even more freedom in the selection of frames, you can access them directly.
+You only have to provide a description for the frame you want to access. Descriptors are
+serve as descriptions, but you can also create descriptions yourself. For example,
+the tuple `(1, 42)` containing two ints would also serve as a valid description.
+
+```python
+from ycbvideo.frame_access import FrameAccessor
+
+frame_accessor = FrameAccessor('/path/to/data')
+
+frame = frame_accessor.get_frame((1, 42))
+```
+
+Keep in mind that if you define your frame iteration scheme based on self created
+descriptions yourself and direct frame access via the `FrameAccessor`, you lose all
+the safety the `Loader` provides, i.e. checking that the requested frames are in fact
+on your disk and are complete (every corresponding file present).
 
 ## Expressions in detail
 

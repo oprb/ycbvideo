@@ -2,7 +2,7 @@ import pkgutil
 import re
 from typing import List, Tuple, Callable, Iterable, Dict, TypeVar
 
-from .loader import Loader
+from .frame_access import FrameAccessor
 
 T = TypeVar('T')
 
@@ -67,8 +67,8 @@ def read_frame_count_per_frame_sequence() -> Dict[str, int]:
     return frames_per_sequence
 
 
-def print_frame_info(loader: Loader, sequences: Iterable[str], verbosity: int = 0):
-    frames_info = loader.frames_info()
+def print_frame_info(frame_accessor: FrameAccessor, sequences: Iterable[str], verbosity: int = 0):
+    frames_info = frame_accessor.frames_info()
     sequence_count = len(frames_info)
     frames_total = read_frame_count_per_frame_sequence()
     missing_sequences = []

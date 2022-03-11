@@ -1,13 +1,13 @@
 from typing import List
 
-from . import dataset_access, datatypes, parsing, selectors
+from . import frame_access, parsing, selectors
 
 
 class DescriptorCreator:
-    def __init__(self, dataset_access: dataset_access.DatasetAccess):
-        self._dataset_access = dataset_access
+    def __init__(self, frame_accessor: frame_access.FrameAccessor):
+        self._frame_accessor = frame_accessor
 
-    def get_descriptors(self, expressions: List[str]) -> List[datatypes.Descriptor]:
+    def get_descriptors(self, expressions: List[str]) -> List[frame_access.Descriptor]:
         selectors = parsing.parse_selection_expressions(expressions)
 
         descriptors = []
@@ -16,8 +16,8 @@ class DescriptorCreator:
 
         return descriptors
 
-    def _create_descriptors_from_selector(self, selector: selectors.Selector) -> List[datatypes.Descriptor]:
-        available_sequences = sorted(self._dataset_access.get_available_frame_sequences())
+    def _create_descriptors_from_selector(self, selector: selectors.Selector) -> List[frame_access.Descriptor]:
+        available_sequences = sorted(self._frame_accessor.get_available_frame_sequences())
 
         descriptors = []
         try:
@@ -26,7 +26,7 @@ class DescriptorCreator:
             raise IOError(f"Frame sequence is not available: {error.element}")
 
         for sequence in selected_sequences:
-            sequence_object = self._dataset_access.get_frame_sequence(sequence)
+            sequence_object = self._frame_accessor.get_frame_sequence(sequence)
 
             complete_frames = sequence_object.get_complete_frame_sets()
             incomplete_frames = sequence_object.get_incomplete_frame_sets()
@@ -47,6 +47,6 @@ class DescriptorCreator:
                 raise IOError(f"Files for frame missing: {sequence}/{incomplete_frame} misses {missing_files}")
 
             for frame in selected_frames:
-                descriptors.append(datatypes.Descriptor(sequence, frame))
+                descriptors.append(frame_access.Descriptor(sequence, frame))
 
         return descriptors

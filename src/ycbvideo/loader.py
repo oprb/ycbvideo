@@ -1,8 +1,7 @@
 from pathlib import Path
-import random
-from typing import List, Iterable, Union, Dict, Optional, Sized, Tuple
+from typing import List, Iterable, Union
 
-from . import dataset_access, descriptor_creation, datatypes, utils
+from . import frame_access, descriptor_creation, utils
 
 
 def _load_selection_expressions_from_file(file: Union[Path, str]) -> List[str]:
@@ -21,31 +20,43 @@ def _load_selection_expressions_from_file(file: Union[Path, str]) -> List[str]:
     return expressions
 
 
+def _get_expressions_from_source(dataset_path: Union[Path, str],
+                                 source: Union[List[str], Union[Path, str]]) -> List[str]:
+    if not isinstance(dataset_path, (Path, str)):
+        raise TypeError('root_path must either be a pathlib.Path or a str')
+
+    dataset_path = Path(dataset_path)
+
+    if isinstance(source, list):
+        if not source:
+            raise ValueError('List is empty')
+
+        return source
+    elif isinstance(source, (Path, str)):
+        path = Path(source)
+
+        if not path.is_absolute():
+            path = dataset_path / path
+
+        if not path.exists():
+            raise IOError(f"Path does not exist: {path}")
+        elif not path.is_file():
+            raise IOError(f"Path is not a file: {path}")
+
+        return _load_selection_expressions_from_file(path)
+
+    raise TypeError('source has to be a list, a pathlib.Path or a str')
+
+
 class Loader:
     def __init__(self, path: Union[Path, str]):
         self._path = utils.validate_directory_path(path)
-        self._data_access = dataset_access.DatasetAccess(self._path)
-        self._descriptor_creator = descriptor_creation.DescriptorCreator(self._data_access)
+        self._frame_accessor = frame_access.FrameAccessor(self._path)
+        self._descriptor_creator = descriptor_creation.DescriptorCreator(self._frame_accessor)
 
-    def frames_info(self) -> Dict[str, Dict[str, Optional[List[str]]]]:
-        available_sequences = sorted(self._data_access.get_available_frame_sequences())
-
-        info = {}
-        for sequence_identifier in available_sequences:
-            sequence = self._data_access.get_frame_sequence(sequence_identifier)
-            complete_frame_sets, incomplete_frame_sets = sequence.get_available_frame_sets()
-
-            frame_sets = {}
-            for complete_set in complete_frame_sets:
-                frame_sets[complete_set] = None
-            for identifier, incomplete_set in incomplete_frame_sets.items():
-                frame_sets[identifier] = incomplete_set
-
-            info[sequence_identifier] = frame_sets
-
-        return info
-
-    def frames(self, frames: Union[List[str], Union[Path, str]], shuffle: bool = False) -> Iterable[datatypes.Frame]:
+    def frames(self,
+               frames: Union[List[str], Union[Path, str]],
+               shuffle: bool = False) -> frame_access.FrameAccessObject:
         """
         Return an iterable object for the specified frames.
 
@@ -129,123 +140,20 @@ class Loader:
 
         Returns
         ------
-        Iterable[Frame]
-            An iterable allowing access to the frame objects with
-            additional support for the builtin len(iterable) and
-            for accessing single frame objects from it by specifying
-            an int index e.g. iterable[42]
+        FrameAccessObject
+            An object allowing access to the frame objects,
+            supporting iteration (__iter__()), determining
+            the number of frames selected (__len__()),
+            direct access (__getitem__()) but also access
+            to the underlying frame descriptors, if necessary.
         """
 
-        descriptors = self.get_descriptors(frames)
+        expressions = _get_expressions_from_source(self._path, frames)
+        descriptors = self._descriptor_creator.get_descriptors(expressions)
 
-        frame_accessor = _FrameAccessor(self, descriptors)
+        frame_access_object = frame_access.FrameAccessObject(self._path, descriptors)
 
         if shuffle:
-            frame_accessor.shuffle()
+            frame_access_object.shuffle()
 
-        return frame_accessor
-
-    def get_descriptors(self, expression_source: Union[List[str], Union[Path, str]]) -> List[datatypes.Descriptor]:
-        """
-        Return a list of descriptors for all existing frames,
-        which would get selected by the given selection
-        expression.
-
-        Parameters
-        ----------
-        expression_source : Union[List[str], Union[pathlib.Path, str]]
-                            Either a list of selection expressions
-                            or a path to a file containing selection
-                            expressions.
-                            The path can either be a string or a
-                            Path object.
-                            If path is not absolute, it is assumed
-                            to be relative to the root of the dataset.
-
-        Returns
-        ------
-        List[Descriptor]
-            A list of descriptors
-        """
-
-        expressions = self._get_expressions_from_source(expression_source)
-
-        return self._descriptor_creator.get_descriptors(expressions)
-
-    def get_frame(self, description: Tuple[Union[str, int], Union[str, int]]) -> datatypes.Frame:
-        """
-        Return the frame specified by the given description.
-
-        Parameters
-        ----------
-        description : Tuple[Union[str, int], Union[str, int]]
-                      Description for the requested frame,
-                      like e.g. a descriptor returned by
-                      get_descriptors(expression_source)
-        Returns
-        -------
-        Frame
-            The frame specified by the given description,
-            if it exists.
-        """
-
-        sequence_description, frame_description = description
-
-        if not isinstance(sequence_description, (str, int)) or not isinstance(frame_description, (str, int)):
-            raise TypeError('Sequence and frame description must be of type str or int')
-
-        # handle possible ints
-        sequence_description = str(sequence_description)
-        frame_description = str(frame_description)
-
-        sequence_index = (sequence_description if sequence_description == 'data_syn'
-                          else utils.normalize_element(sequence_description, 'sequence'))
-        frame_index = utils.normalize_element(frame_description, 'frame')
-
-        return self._data_access.get_frame_sequence(sequence_index).get_frame(frame_index)
-
-    def _get_expressions_from_source(self, source: Union[List[str], Union[Path, str]]):
-        if isinstance(source, list):
-            if not source:
-                raise ValueError('List is empty')
-
-            return source
-        elif isinstance(source, (Path, str)):
-            path = Path(source)
-
-            if not path.is_absolute():
-                path = self._path / path
-
-            if not path.exists():
-                raise IOError(f"Path does not exist: {path}")
-            elif not path.is_file():
-                raise IOError(f"Path is not a file: {path}")
-
-            return _load_selection_expressions_from_file(path)
-
-        raise TypeError('source has to be a list, a pathlib.Path or a str')
-
-
-class _FrameAccessor(Sized, Iterable):
-    def __init__(self, loader: Loader, descriptors: List[datatypes.Descriptor]):
-        self._loader = loader
-        self._descriptors = descriptors
-
-    def shuffle(self):
-        random.shuffle(self._descriptors)
-
-    def __iter__(self):
-        for descriptor in self._descriptors:
-            yield self._loader.get_frame(descriptor)
-
-    def __len__(self):
-        return len(self._descriptors)
-
-    def __getitem__(self, index: int):
-        if isinstance(index, int):
-            if 0 <= index < len(self):
-                return self._loader.get_frame(self._descriptors[index])
-
-            raise ValueError('index out of range')
-
-        raise TypeError('item must be an int')
+        return frame_access_object
