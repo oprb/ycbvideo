@@ -185,7 +185,7 @@ frame = frame_accessor.get_frame((1, 42))
 ```
 
 Keep in mind that if you define your frame iteration scheme based on self created
-descriptions yourself and direct frame access via the `FrameAccessor`, you lose all
+descriptions and direct frame access via the `FrameAccessor`, you lose all
 the safety the `Loader` provides, i.e. checking that the requested frames are in fact
 on your disk and are complete (every corresponding file present).
 
